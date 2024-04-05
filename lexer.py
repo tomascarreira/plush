@@ -69,7 +69,7 @@ def t_INTEGER_NUM(t):
 	return t
 
 def t_FLOAT_NUM(t):
-	r"\d*.\d+"
+	r"\d*\.\d+"
 	t.value = float(t.value)
 	return t
 
