@@ -63,14 +63,14 @@ t_CIRCUMFLEX = r"\^"
 t_SLASH = r"/"
 t_PERCENT = r"%"
 
-def t_INTEGER_NUM(t):
-	r"\d+"
-	t.value = int(t.value)
-	return t
-
 def t_FLOAT_NUM(t):
 	r"\d*\.\d+"
 	t.value = float(t.value)
+	return t
+
+def t_INTEGER_NUM(t):
+	r"\d+"
+	t.value = int(t.value)
 	return t
 
 def t_STRING(t):
