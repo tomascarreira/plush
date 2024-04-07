@@ -108,13 +108,22 @@ def p_wileStatement(p):
     "whileStatement : WHILE expression codeBlock"
 
 def p_variableAssignment(p):
-    "variableAssingment : IDENT COLON_EQUALS expression SEMICOLON"
+    "variableAssingment : leftHandSide COLON_EQUALS expression SEMICOLON"
+
+def p_leftHandSide1(p):
+    "leftHandSide : IDENT"
+    
+def p_leftHandSide2(p):
+    "leftHandSide : IDENT indexAccess"
+
+def p_indexAccess(p):
+    "indexAccess : LSQUARE expression RSQUARE"
 
 def p_expression1(p):
     "expression : LPAREN expression LPAREN"
 
 def p_expression2(p):
-    "expression : IDENT LSQUARE expression RSQUARE"
+    "expression : IDENT indexAccess"
 
 def p_expression3(p):
     "expression : MINUS expression"
@@ -183,6 +192,24 @@ def p_expression24(p):
     "expression : IDENT"
 
 def p_expression25(p):
+    "expression : list"
+
+def p_list(p):
+    "list : LSQUARE insideList RSQUARE"
+
+def p_insideList1(p):
+    "insideList : "
+
+def p_insideList2(p):
+    "insideList : nonEmptyList"
+
+def p_nonEmptyList1(p):
+    "nonEmptyList : expression"
+
+def p_nonEmptyList2(p):
+    "nonEmptyList : expression COMMA nonEmptyList"
+
+def p_expression26(p):
     "expression : functionCall"
 
 def p_functionCall1(p):

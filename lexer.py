@@ -1,4 +1,4 @@
-import ply.lex as plylex
+from ply import lex
 
 reserved = {
 	"val": "VAL",
@@ -103,9 +103,4 @@ def t_error(t):
 	print("Illegal character '%s'" % t.value[0])
 	t.lexer.skip(1)
 
-lexer = plylex.lex()
-
-def lex(data):
-	lexer.input(data)
-	for tok in lexer:
-		print(tok)
+lexer = lex.lex()
