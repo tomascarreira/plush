@@ -1,6 +1,7 @@
 import sys
 
 from lexer import lex
+from parser import parse
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
@@ -9,4 +10,7 @@ if __name__ == "__main__":
             print(file.readlines())
     else:
         while True:
-            lex(sys.stdin.readline())
+            input = sys.stdin.readline()
+            lex(input)
+            parse(input)
+
