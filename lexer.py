@@ -39,7 +39,7 @@ tokens = [
 	"LESS_EQUALS",
 	"PLUS",
 	"MINUS",
-	"START",
+	"STAR",
 	"CIRCUMFLEX",
 	"SLASH",
 	"PERCENT",
@@ -66,7 +66,7 @@ t_LESS = r"<"
 t_LESS_EQUALS = r"<\="
 t_PLUS = r"\+"
 t_MINUS = r"\-"
-t_START = r"\*"
+t_STAR = r"\*"
 t_CIRCUMFLEX = r"\^"
 t_SLASH = r"/"
 t_PERCENT = r"%"
