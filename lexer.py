@@ -11,10 +11,11 @@ reserved = {
 	"false": "FALSE",
 	"int": "INT",
 	"float": "FLOAT",
+	"string": "STRING"
 }
 
 tokens = [
-	"STRING",
+	"STRING_LITERAL",
 	"INTEGER_NUM",
 	"FLOAT_NUM",
 	"IDENT",
@@ -81,7 +82,7 @@ def t_INTEGER_NUM(t):
 	t.value = int(t.value)
 	return t
 
-def t_STRING(t):
+def t_STRING_LITERAL(t):
 	r"\".*\""
 	t.value = str(t.value)[1:-1]
 	return t

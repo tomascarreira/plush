@@ -45,7 +45,7 @@ def p_nonEmptyFunctionArguments1(p):
     "nonEmptyFunctionArguments : argument"
 
 def p_nonEmptyFunctionArguments2(p):
-    "nonEmptyFunctionArguments : argument COLON argument nonEmptyFunctionArguments"
+    "nonEmptyFunctionArguments : argument COMMA nonEmptyFunctionArguments"
 
 def p_argument(p):
     "argument : varType IDENT COLON type"
@@ -63,6 +63,9 @@ def p_type2(p):
     "type : FLOAT"
 
 def p_type3(p):
+    "type : STRING"
+
+def p_type4(p):
     "type : LSQUARE type RSQUARE"
 
 def p_codeBlock1(p):
@@ -105,7 +108,7 @@ def p_wileStatement(p):
     "whileStatement : WHILE expression codeBlock"
 
 def p_variableAssignment(p):
-    "variableAssingment : IDENT COLON_EQUALS expression"
+    "variableAssingment : IDENT COLON_EQUALS expression SEMICOLON"
 
 def p_expression1(p):
     "expression : LPAREN expression LPAREN"
@@ -174,7 +177,7 @@ def p_expression22(p):
     "expression : FLOAT_NUM"
 
 def p_expression23(p):
-    "expression : STRING"
+    "expression : STRING_LITERAL"
 
 def p_expression24(p):
     "expression : IDENT"
@@ -193,7 +196,6 @@ def p_functionCallArguments1(p):
 
 def p_functionCallArguments2(p):
     "functionCallArguments : expression COMMA functionCallArguments"
-
 
 def p_error(p):
     print("Syntax error in input. ", p)
