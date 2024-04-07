@@ -26,13 +26,17 @@ tokens = [
 	"RCURLY",
 	"COMMA",
 	"COLON",
+	"COLON_EQUALS",
 	"EQUALS",
+	"EXCLAMATION_EQUALS",
 	"SEMICOLON",
-	"AMPERSAND",
-	"PIPE",
+	"AMPERSAND_AMPERSAND",
+	"PIPE_PIPE",
 	"EXCLAMATION",
 	"GREATER",
+	"GREATER_EQUALS",
 	"LESS",
+	"LESS_EQUALS",
 	"PLUS",
 	"MINUS",
 	"START",
@@ -49,13 +53,17 @@ t_LCURLY = r"\{"
 t_RCURLY = r"\}"
 t_COMMA = r","
 t_COLON = r"\:"
+t_COLON_EQUALS = r"\:\="
 t_EQUALS = r"\="
+t_EXCLAMATION_EQUALS = r"\!\="
 t_SEMICOLON = r";"
-t_AMPERSAND = r"&"
-t_PIPE = r"\|"
+t_AMPERSAND_AMPERSAND = r"&&"
+t_PIPE_PIPE = r"\|\|"
 t_EXCLAMATION = r"\!"
 t_GREATER = r">"
+t_GREATER_EQUALS = r">\="
 t_LESS = r"<"
+t_LESS_EQUALS = r"<\="
 t_PLUS = r"\+"
 t_MINUS = r"\-"
 t_START = r"\*"
