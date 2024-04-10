@@ -11,13 +11,15 @@ reserved = {
 	"false": "FALSE",
 	"int": "INT",
 	"float": "FLOAT",
-	"string": "STRING"
+	"string": "STRING",
+	"bool": "BOOL",
+	"void": "VOID",
 }
 
 tokens = [
-	"STRING_LITERAL",
-	"INTEGER_NUM",
-	"FLOAT_NUM",
+	"STR_LITERAL",
+	"INT_LITERAL",
+	"FLT_LITERAL",
 	"IDENT",
 	"LPAREN",
 	"RPAREN",
@@ -72,17 +74,17 @@ t_CIRCUMFLEX = r"\^"
 t_SLASH = r"/"
 t_PERCENT = r"%"
 
-def t_FLOAT_NUM(t):
+def t_FLT_LITERAL(t):
 	r"\d*\.\d+"
 	t.value = float(t.value)
 	return t
 
-def t_INTEGER_NUM(t):
+def t_INT_LITERAL(t):
 	r"\d+"
 	t.value = int(t.value)
 	return t
 
-def t_STRING_LITERAL(t):
+def t_STR_LITERAL(t):
 	r"\".*\""
 	t.value = str(t.value)[1:-1]
 	return t

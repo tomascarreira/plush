@@ -2,6 +2,20 @@ from ply import yacc
 
 from lexer import tokens
 
+precedence = (
+    ("nonassoc", "PARENS"),
+    ("nonassoc", "FUNCTION_CALL"),
+    ("nonassoc", "INDEXING"),
+    ("right", "NEGATION", "EXCLAMATION"),
+    ("left", "CIRCUMFLEX"),
+    ("left", "STAR", "SLASH", "PERCENT"),
+    ("left", "PLUS", "MINUS"),
+    ("nonassoc", "LESS", "LESS_EQUALS", "GREATER", "GREATER_EQUALS"),
+    ("nonassoc", "EQUALS", "EXCLAMATION_EQUALS"),
+    ("left", "AMPERSAND_AMPERSAND"),
+    ("left", "PIPE_PIPE"),
+)
+
 def p_start1(p):
     "start : functionDefinition"
 
@@ -66,6 +80,12 @@ def p_type3(p):
     "type : STRING"
 
 def p_type4(p):
+    "type : BOOL"
+
+def p_type5(p):
+    "type : VOID"
+
+def p_type6(p):
     "type : LSQUARE type RSQUARE"
 
 def p_codeBlock1(p):
@@ -120,13 +140,13 @@ def p_indexAccess(p):
     "indexAccess : LSQUARE expression RSQUARE"
 
 def p_expression1(p):
-    "expression : LPAREN expression LPAREN"
+    "expression : LPAREN expression LPAREN %prec PARENS"
 
 def p_expression2(p):
-    "expression : IDENT indexAccess"
+    "expression : expression indexAccess %prec INDEXING"
 
 def p_expression3(p):
-    "expression : MINUS expression"
+    "expression : MINUS expression %prec NEGATION"
 
 def p_expression4(p):
     "expression : EXCLAMATION expression"
@@ -180,13 +200,13 @@ def p_expression20(p):
     "expression : FALSE"
     
 def p_expression21(p):
-    "expression : INTEGER_NUM"
+    "expression : INT_LITERAL"
 
 def p_expression22(p):
-    "expression : FLOAT_NUM"
+    "expression : FLT_LITERAL"
 
 def p_expression23(p):
-    "expression : STRING_LITERAL"
+    "expression : STR_LITERAL"
 
 def p_expression24(p):
     "expression : IDENT"
@@ -210,7 +230,7 @@ def p_nonEmptyList2(p):
     "nonEmptyList : expression COMMA nonEmptyList"
 
 def p_expression26(p):
-    "expression : functionCall"
+    "expression : functionCall %prec FUNCTION_CALL"
 
 def p_functionCall1(p):
     "functionCall : IDENT LPAREN RPAREN"
