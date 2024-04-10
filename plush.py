@@ -7,9 +7,9 @@ if __name__ == "__main__":
         print("Reading file: ", sys.argv[1])
         with open(sys.argv[1]) as file:
             input = file.read()
-            parse(input)
+            print(parse(input))
     else:
         while True:
             input = sys.stdin.readline()
-            parse(input, parserStart="codeBlock")
+            print(parse(input, parserStart="statement"))
 
