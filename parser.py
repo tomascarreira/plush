@@ -118,6 +118,8 @@ class Program:
     definitions: list[Definition]
 
 precedence = (
+    # WEIRD FIX SHIFT/REDUCE conflict. Não sei bem qual se isto pode causar outros problemas
+    ("nonassoc", "IDENT"),
     ("nonassoc", "PARENS"),
     ("nonassoc", "FUNCTION_CALL"),
     ("nonassoc", "INDEXING"),
@@ -126,10 +128,10 @@ precedence = (
     ("left", "STAR", "SLASH", "PERCENT"),
     ("left", "PLUS", "MINUS"),
     ("nonassoc", "LESS", "LESS_EQUALS", "GREATER", "GREATER_EQUALS"),
-    ("nonassoc", "EQUALS", "EXCLAMATION_EQUALS"),
+    ("left", "EQUALS", "EXCLAMATION_EQUALS"),
     ("left", "AMPERSAND_AMPERSAND"),
     ("left", "PIPE_PIPE"),
-)
+)[::-1]
 
 def p_start1(p):
     "start : functionDefinition"
@@ -301,7 +303,7 @@ def p_indexAccess(p):
     p[0] = p[2]
 
 def p_expression1(p):
-    "expression : LPAREN expression LPAREN %prec PARENS"
+    "expression : LPAREN expression RPAREN %prec PARENS"
     p[0] = p[2]
 
 def p_expression2(p):
