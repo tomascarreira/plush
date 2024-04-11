@@ -41,7 +41,7 @@ class BinaryOp(Enum):
 class Statement:
     pass
 
-class Expression(Statement):
+class Expression():
     pass
 
 @dataclass
@@ -270,8 +270,12 @@ def p_statement5(p):
     "statement : codeBlock"
     p[0] = p[1]
 
+# def p_statement6(p):
+#     "statement : expression SEMICOLON"
+#     p[0] = p[1]
+
 def p_statement6(p):
-    "statement : expression SEMICOLON"
+    "statement : functionCall SEMICOLON"
     p[0] = p[1]
 
 def p_ifStatement1(p):
