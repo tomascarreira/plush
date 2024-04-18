@@ -11,6 +11,7 @@ reserved = {
 	"false": "FALSE",
 	"int": "INT",
 	"float": "FLOAT",
+	"char": "CHAR",
 	"string": "STRING",
 	"bool": "BOOL",
 	"void": "VOID",

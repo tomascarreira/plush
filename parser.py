@@ -134,8 +134,8 @@ precedence = (
 )[::-1]
 
 def p_start1(p):
-    "start : functionDefinition"
-    p[0] = Program([], [p[1]])
+    "start : "
+    p[0] = Program([], [])
 
 def p_start2(p):
     "start : declaration start"
@@ -217,18 +217,21 @@ def p_type2(p):
     p[0] = [Type.FLT]
 
 def p_type3(p):
+    "type : CHAR"
+
+def p_type4(p):
     "type : STRING"
     p[0] = [Type.STR]
 
-def p_type4(p):
+def p_type5(p):
     "type : BOOL"
     p[0] = [Type.BOOL]
 
-def p_type5(p):
+def p_type6(p):
     "type : VOID"
     p[0] = [Type.VOID]
 
-def p_type6(p):
+def p_type7(p):
     "type : LSQUARE type RSQUARE"
     p[2].append(Type.LIST)
     p[0] = p[2]
