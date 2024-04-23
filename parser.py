@@ -9,9 +9,10 @@ class Type(Enum):
     INT = 0
     FLT = 1 
     STR = 2
-    BOOL = 3
-    VOID = 4
-    LIST = 5
+    CHA = 3
+    BOOL = 4
+    VOID = 5
+    LIST = 6
 
 class VarType(Enum):
     VAR = 0
@@ -37,11 +38,14 @@ class BinaryOp(Enum):
     AND = 12
     OR = 13
     INDEXING = 14
+
+class Node:
+    pass
     
-class Statement:
+class Statement(Node):
     pass
 
-class Expression():
+class Expression(Node):
     pass
 
 @dataclass
@@ -70,7 +74,7 @@ class Ident(Expression):
     ident: str
 
 @dataclass
-class CodeBlock:
+class CodeBlock(Node):
     statements: list[Statement]
 
 @dataclass
@@ -92,12 +96,12 @@ class Assignment(Statement):
 
 
 @dataclass
-class Declaration:
+class Declaration(Node):
     ident: str
     args: list[(VarType, str, list[Type])]
     retType: list[Type]
 
-class Definition:
+class Definition(Node):
     pass
 
 @dataclass
@@ -113,7 +117,7 @@ class FunctionDefinition(Definition):
     codeBlock: CodeBlock
 
 @dataclass
-class Program:
+class Program(Node):
     declarations: list[Declaration]
     definitions: list[Definition]
 
@@ -459,3 +463,5 @@ def parse(data, parserStart="start"):
     parser = yacc.yacc(start=parserStart)
     return parser.parse(data)
     
+def pp_program(ast: Program):
+    print(ast.pp())
