@@ -6,9 +6,13 @@ old_type = type
 class Context:
     def __init__(self):
         self.stack = [{}]
+        self.funcDefs = {}
 
-    def push(self, var, type):
+    def add(self, var, type):
         self.stack[-1][var] = type
+
+    def remove(self, var):
+        self.stack[-1].pop(var)
 
     def newScope(self):
         self.stack.append({})
@@ -22,6 +26,14 @@ class Context:
                 return scope[ident] 
 
         return None
+
+    def addFuncDef(self, functionHeader):
+        self.funcDefs[functionHeader.ident] = functionHeader
+
+    def getFunDef(self, ident):
+        return funcDefs.get(ident, None)
+
+        
 
 # !! Maybe is necessary to reverse the the nodes in the ast because the parsing puts the nodes in list in the inverse order !!
 # To verify the correct use of var and val, context may to save if a variable is var or val, for know i only will check the type
@@ -41,13 +53,16 @@ def verify(ctx: Context, node: Node):
 
         case VariableDefinition(varType, ident, type, rhs):
             assert(type == verify(ctx, rhs))
-            ctx.push(ident, type)
+            ctx.add(ident, type)
 
         case FunctionDefinition(functionHeader, codeBlock):
             # here we can check if a name of a function repeats
             # change here to check for val and var use
-            [ctx.push(ident, type)  for (varType, ident, type) in functionHeader.args]
-            verify(ctx, codeBlock)
+            # Maybe wrong variables get add to the old scope not the newone
+            [ctx.add(ident, type)  for (varType, ident, type) in functionHeader.args]
+            # TODO verify the return types of the function
+            # check if return type equals the value return by the code block
+            [ctx.add(ident, type)  for (varType, ident, type) in functionHeader.args]
 
         case CodeBlock(statements):
             ctx.newScope()
@@ -69,11 +84,23 @@ def verify(ctx: Context, node: Node):
             verify(ctx, thenBlock)
             verify(ctx, elseBlock)
 
-        case FunctionCall():
-            pass
+        case FunctionCall(ident, args):
+            # can return None, do error check
+            funcDef = ctx.getFunDef(ident)
+            assert(len(funcDef.args) == len(args))
+            for def, (_, _, call) in zip(args, funcDef.args):
+                assert(def == call) 
+            return funcDef.retType
 
-        case Binary():
-            pass
+        case Binary(op, left, right):
+            if op in [BinaryOp.EXP, BinaryOp.MULT, BinaryOp.DIV, BinaryOp.REM, BinaryOp.PLUS, BinaryOp.PLUS]:
+                pass
+
+            elif op in [BinaryOp.LT, BinaryOp.GT, BinaryOp.GTE, BinaryOp.EQ, BinaryOp.NEQ]:
+                pass
+
+            else:
+                pass
 
         case Unary():
             pass
