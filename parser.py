@@ -153,7 +153,7 @@ def p_start3(p):
 
 def p_declaration(p):
     "declaration : functionHeader SEMICOLON"
-    p[0] = Declaration(p[1][0], p[1][1], p[1][2])
+    p[0] = p[1]
 
 def p_definition1(p):
     "definition : variableDefinition"
@@ -242,7 +242,7 @@ def p_type7(p):
 
 def p_codeBlock1(p):
     "codeBlock : LCURLY RCURLY"
-    p[0] = codeBlock([])
+    p[0] = CodeBlock([])
 
 def p_codeBlock2(p):
     "codeBlock : LCURLY nonEmptyStatements RCURLY"

@@ -9,7 +9,7 @@ if __name__ == "__main__":
         with open(sys.argv[1]) as file:
             input = file.read()
             ast = parse(input)
-            print(ast)
+            # print(ast)
             verify(Context(), ast)
 
     else:
@@ -17,4 +17,5 @@ if __name__ == "__main__":
             input = sys.stdin.readline()
             ast = parse(input, parserStart="statement")
             print(ast)
+            verify(Context(), ast)
 
