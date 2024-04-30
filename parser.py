@@ -409,31 +409,6 @@ def p_expression24(p):
     "expression : IDENT"
     p[0] = Ident(p[1])
 
-def p_expression25(p):
-    "expression : list"
-    p[0] = p[1]
-
-def p_list(p):
-    "list : LSQUARE insideList RSQUARE"
-    p[0] = Literal(p[2], Type.LIST)
-
-def p_insideList1(p):
-    "insideList : "
-    p[0] = []
-
-def p_insideList2(p):
-    "insideList : nonEmptyList"
-    p[0] = p[1]
-
-def p_nonEmptyList1(p):
-    "nonEmptyList : expression"
-    p[0] = [p[1]]
-
-def p_nonEmptyList2(p):
-    "nonEmptyList : expression COMMA nonEmptyList"
-    p[3].append(p[1])
-    p[0] = p[3]
-
 def p_expression26(p):
     "expression : functionCall %prec FUNCTION_CALL"
     p[0] = p[1]

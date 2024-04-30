@@ -5,8 +5,8 @@ from parser import Type, BinaryOp, UnaryOp
 
 old_type = type
 
-class Special(Enum):
-    RETURN_VAR = 0
+# class Special(Enum):
+#     RETURN_VAR = 0
 
 class Context:
     def __init__(self):
@@ -64,7 +64,7 @@ def verify_(ctx: Context, node: Node):
             [ctx.add(ident, type)  for (_, ident, type) in functionHeader.args]
             # Add to the context the name of the functions so it is possible to verify the type of
             # the return, it is done in the assignment rule
-            ctx.add(functionHeader.ident, Special.RETURN_VAR)
+            ctx.add(functionHeader.ident, functionHeader.retType)
             ctx.addFuncDef(functionHeader)
             verify_(ctx, codeBlock)
             ctx.remove(functionHeader.ident)
@@ -82,20 +82,20 @@ def verify_(ctx: Context, node: Node):
             # Hint: find the number of indexings and remove that number from the front of the list
             if indexing:
                 type = type[1:]
-            ctxType = ctx.getType(ident)
             if not type:
                 print(f"Cannot do an assingment to a variable that does not exist")
                 exit(3)
             # TODO: handle when there is no return type
-            if ctxType == Special.RETURN_VAR:
-                returnType = ctx.getFunDef(ident).retType
-                if type != returnType:
-                    print(f"type {type} does not match return type of function declared {returnType}")
-                    exit(3)
-            else:
-                if type != ctxType:
-                    print(f"Cannot assign {type} to a variable with type {ctxType}")
-                    exit(3)
+            # if ctxType == Special.RETURN_VAR:
+            #     returnType = ctx.getFunDef(ident).retType
+            #     if type != returnType:
+            #         print(f"type {type} does not match return type of function declared {returnType}")
+            #         exit(3)
+            # else:
+            ctxType = ctx.getType(ident)
+            if type != ctxType:
+                print(f"Cannot assign {type} to a variable with type {ctxType}")
+                exit(3)
 
         case While(guard, codeBlock):
             guardType = verify_(ctx, guard)
@@ -115,12 +115,16 @@ def verify_(ctx: Context, node: Node):
         case FunctionCall(ident, args):
             # can return None, do error check
             funcDef = ctx.getFunDef(ident)
-            if len(funcDef.args) == len(args):
+            if not funcDef:
+                print(f"Function {ident} does not exist")
+                exit(3)
+            if len(funcDef.args) != len(args):
                 print(f"In function call expected {len(funcDef.args)} arguments, got {len(args)}")
                 exit(3)
             for call, (_, argIdent, defiType) in zip(args, funcDef.args):
-                if defiType != callType:
-                    print(f"Expected {argIdent} argument to have type {defiType} got type {callType}")
+                argType = verify_(ctx, call)
+                if defiType != argType:
+                    print(f"Expected {argIdent} argument to have type {defiType} got type {argType}")
                     exit(3)
             return funcDef.retType
 
