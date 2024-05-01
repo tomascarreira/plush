@@ -1,15 +1,15 @@
 from enum import Enum
 
 from parser import Node, Program, Declaration, VariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, FunctionCall, Binary, Unary, Ident, Literal
-from parser import Type, TypeEnum, BinaryOp, UnaryOp
+from parser import Type, TypeEnum, VarType, BinaryOp, UnaryOp
 
 class Context:
     def __init__(self):
         self.stack = [{}]
         self.funcDefs = {}
 
-    def add(self, ident, type):
-        self.stack[-1][ident] = type
+    def add(self, ident, type, varType):
+        self.stack[-1][ident] = (type, varType)
 
     def remove(self, ident):
         self.stack[-1].pop(ident)
@@ -23,7 +23,14 @@ class Context:
     def getType(self, ident):
         for scope in self.stack[::-1]:
             if ident in scope:
-                return scope[ident] 
+                return scope[ident][0] 
+
+        return None
+
+    def getVarType(self, ident):
+        for scope in self.stack[::-1]:
+            if ident in scope:
+                return scope[ident][1] 
 
         return None
 
@@ -51,17 +58,17 @@ def verify_(ctx: Context, node: Node):
             if type != rhsType:
                 print(f"Righ hand side expression is type {rhsType} but its declare to have type {type}")
                 exit(3)
-            ctx.add(ident, type)
+            ctx.add(ident, type, varType)
 
         case FunctionDefinition(functionHeader, codeBlock):
             # here we can check if a name of a function repeats
             # change here to check for val and var use
             # Maybe wrong variables get add to the old scope not the newone
             # Fix can be to havve a function block so it can have a diferent behaviour from codeBlock
-            [ctx.add(ident, type)  for (_, ident, type) in functionHeader.args]
+            [ctx.add(ident, type, varType)  for (varType, ident, type) in functionHeader.args]
             # Add to the context the name of the functions so it is possible to verify the type of
             # the return, it is done in the assignment rule
-            ctx.add(functionHeader.ident, functionHeader.retType)
+            ctx.add(functionHeader.ident, functionHeader.retType, VarType.VAR)
             ctx.addFuncDef(functionHeader)
             verify_(ctx, codeBlock)
             ctx.remove(functionHeader.ident)
@@ -89,6 +96,11 @@ def verify_(ctx: Context, node: Node):
             #         print(f"type {type} does not match return type of function declared {returnType}")
             #         exit(3)
             # else:
+            ctxVarType = ctx.getVarType(ident)
+            if ctxVarType == VarType.VAL:
+                print(f"Cannot assign to val variable {ident}")
+                exit(3)
+
             ctxType = ctx.getType(ident)
             if type != ctxType:
                 print(f"Cannot assign {type} to a variable with type {ctxType}")
