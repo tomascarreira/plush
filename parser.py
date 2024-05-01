@@ -132,7 +132,7 @@ class Statement(Node):
     pass
 
 class Expression(Node):
-    exprType: Type
+    exprType: Type = None
 
 @dataclass
 class Unary(Expression):
