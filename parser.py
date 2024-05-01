@@ -123,10 +123,11 @@ class Program(Node):
 
 precedence = (
     # WEIRD FIX SHIFT/REDUCE conflict. Não sei bem qual se isto pode causar outros problemas
-    ("nonassoc", "IDENT"),
-    ("nonassoc", "PARENS"),
+    # ("nonassoc", "IDENT"),
     ("nonassoc", "FUNCTION_CALL"),
-    ("nonassoc", "INDEXING"),
+    # ("nonassoc", "INDEXING"),
+    ("nonassoc", "LPAREN", "RPAREN"),
+    ("nonassoc", "LSQUARE", "RSQUARE"),
     ("right", "NEGATION", "EXCLAMATION"),
     ("left", "CIRCUMFLEX"),
     ("left", "STAR", "SLASH", "PERCENT"),
@@ -314,11 +315,11 @@ def p_indexAccess(p):
     p[0] = p[2]
 
 def p_expression1(p):
-    "expression : LPAREN expression RPAREN %prec PARENS"
+    "expression : LPAREN expression RPAREN"
     p[0] = p[2]
 
 def p_expression2(p):
-    "expression : expression indexAccess %prec INDEXING"
+    "expression : expression indexAccess"
     p[0] = Binary(BinaryOp.INDEXING, p[1], p[2])
 
 def p_expression3(p):
