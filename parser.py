@@ -5,18 +5,60 @@ from ply import yacc
 
 from lexer import tokens
 
-class Type(Enum):
+class TypeEnum(Enum):
     INT = 0
     FLT = 1 
     STR = 2
     CHA = 3
     BOOL = 4
     VOID = 5
-    LIST = 6
+
+    def __str__(self):
+        match self:
+            case TypeEnum.INT:
+                res = "int"
+            case TypeEnum.FLT:
+                res = "flt"
+            case TypeEnum.STR:
+                res = "string"
+            case TypeEnum.CHA:
+                res = "char"
+            case TypeEnum.BOOL:
+                res = "bool"
+            case TypeEnum.VOID:
+                res = "void"
+
+        return res
+
+
+@dataclass
+class Type:
+    type: TypeEnum
+    listDepth: int = 0
+
+    def __eq__(self, o):
+        if isinstance(o, Type):
+            return self.type == o.type and self.listDepth == o.listDepth
+
+        return False
+
+    def __str__(self):
+        if self.listDepth == 0:
+            return str(self.type)
+        else:
+            return "["*self.listDepth + str(self.type) + "]"*self.listDepth
 
 class VarType(Enum):
     VAR = 0
     VAL = 1
+
+    def __str__(self):
+        match self:
+            case VarType.VAR:
+                res = "var"
+            case VarType.VAL:
+                res = "val"
+        return res
 
 class UnaryOp(Enum):
     NEGATION = 0
@@ -39,6 +81,41 @@ class BinaryOp(Enum):
     OR = 13
     INDEXING = 14
 
+    def __str__(self):
+        match self:
+            case BinaryOp.EXP:
+                res = "^"
+            case BinaryOp.MULT:
+                res = "*"
+            case BinaryOp.DIV:
+                res = "/"
+            case BinaryOp.REM:
+                res = "%"
+            case BinaryOp.PLUS:
+                res = "+"
+            case BinaryOp.MINUS:
+                res = "-"
+            case BinaryOp.LT:
+                res = "<"
+            case BinaryOp.LTE:
+                res = "<="
+            case BinaryOp.GT:
+                res = ">"
+            case BinaryOp.GTE:
+                res = ">="
+            case BinaryOp.EQ:
+                res = "="
+            case BinaryOp.NEQ:
+                res = "!="
+            case BinaryOp.AND:
+                res = "&&"
+            case BinaryOp.OR:
+                res = "||"
+            case BinaryOp.INDEXING:
+                res = "[]"
+
+        return res
+
 class Node:
     pass
     
@@ -46,7 +123,7 @@ class Statement(Node):
     pass
 
 class Expression(Node):
-    exprType: list[Type]
+    exprType: Type
     pass
 
 @dataclass
@@ -68,7 +145,7 @@ class FunctionCall(Expression):
 @dataclass
 class Literal(Expression):
     val: any
-    type: list[Type]
+    type: Type
 
 @dataclass
 class Ident(Expression):
@@ -99,8 +176,8 @@ class Assignment(Statement):
 @dataclass
 class Declaration(Node):
     ident: str
-    args: list[(VarType, str, list[Type])]
-    retType: list[Type]
+    args: list[(VarType, str, Type)]
+    retType: Type
 
 class Definition(Node):
     pass
@@ -109,7 +186,7 @@ class Definition(Node):
 class VariableDefinition(Definition, Statement):
     varType: VarType
     ident: str
-    type: list[Type]
+    type: Type
     rhs: Expression
 
 @dataclass
@@ -184,7 +261,7 @@ def p_functionDefinition(p):
 def p_functionHeader(p):
     "functionHeader : FUNCTION IDENT LPAREN functionArguments RPAREN returnType"
     if not p[6]:
-        p[6] = Type.VOID
+        p[6] = Type(TypeEnum.VOID)
     p[0] = Declaration(p[2], p[4], p[6])
 
 def p_fucntionArguments1(p):
@@ -218,30 +295,31 @@ def p_returnType2(p):
 
 def p_type1(p):
     "type : INT"
-    p[0] = [Type.INT]
+    p[0] = Type(TypeEnum.INT)
 
 def p_type2(p):
     "type : FLOAT"
-    p[0] = [Type.FLT]
+    p[0] = Type(TypeEnum.FLT)
 
 def p_type3(p):
     "type : CHAR"
+    p[0] = Type(TypeEnum.CHA)
 
 def p_type4(p):
     "type : STRING"
-    p[0] = [Type.STR]
+    p[0] = Type(TypeEnum.STR)
 
 def p_type5(p):
     "type : BOOL"
-    p[0] = [Type.BOOL]
+    p[0] = Type(TypeEnum.BOOL)
 
 def p_type6(p):
     "type : VOID"
-    p[0] = [Type.VOID]
+    p[0] = Type(TypeEnum.VOID)
 
 def p_type7(p):
     "type : LSQUARE type RSQUARE"
-    p[2].append(Type.LIST)
+    p[2].listDepth += 1
     p[0] = p[2]
 
 def p_codeBlock1(p):
@@ -280,10 +358,6 @@ def p_statement4(p):
 def p_statement5(p):
     "statement : codeBlock"
     p[0] = p[1]
-
-# def p_statement6(p):
-#     "statement : expression SEMICOLON"
-#     p[0] = p[1]
 
 def p_statement6(p):
     "statement : functionCall SEMICOLON"
@@ -391,25 +465,29 @@ def p_expression18(p):
 
 def p_expression19(p):
     "expression : TRUE"
-    p[0] = Literal(p[1], [Type.BOOL])
+    p[0] = Literal(p[1], Type(TypeEnum.BOOL))
 
 def p_expression20(p):
     "expression : FALSE"
-    p[0] = Literal(p[1], [Type.BOOL])
+    p[0] = Literal(p[1], Type(TypeEnum.BOOL))
     
 def p_expression21(p):
     "expression : INT_LITERAL"
-    p[0] = Literal(p[1], [Type.INT])
+    p[0] = Literal(p[1], Type(TypeEnum.INT))
 
 def p_expression22(p):
     "expression : FLT_LITERAL"
-    p[0] = Literal(p[1], [Type.FLT])
+    p[0] = Literal(p[1], Type(TypeEnum.FLT))
 
 def p_expression23(p):
     "expression : STR_LITERAL"
-    p[0] = Literal(p[1], [Type.STR])
+    p[0] = Literal(p[1], Type(TypeEnum.STR))
 
 def p_expression24(p):
+    "expression : CHR_LITERAL"
+    p[0] = Literal(p[1], Type(TypeEnum.CHA))
+
+def p_expression25(p):
     "expression : IDENT"
     p[0] = Ident(p[1])
 
@@ -441,6 +519,4 @@ def p_error(p):
 def parse(data, parserStart="start"):
     parser = yacc.yacc(start=parserStart)
     return parser.parse(data)
-    
-def pp_program(ast: Program):
-    print(ast.pp())
+  

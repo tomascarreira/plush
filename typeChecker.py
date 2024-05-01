@@ -1,7 +1,7 @@
 from enum import Enum
 
 from parser import Node, Program, Declaration, VariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, FunctionCall, Binary, Unary, Ident, Literal
-from parser import Type, BinaryOp, UnaryOp
+from parser import Type, TypeEnum, BinaryOp, UnaryOp
 
 old_type = type
 
@@ -35,8 +35,11 @@ class Context:
     def addFuncDef(self, functionHeader):
         self.funcDefs[functionHeader.ident] = functionHeader
 
-    def getFunDef(self, ident):
+    def getFuncDef(self, ident):
         return self.funcDefs.get(ident, None)
+
+    def noFuncDefs(self):
+        return len(self.funcDefs) == 0
 
 # To verify the correct use of var and val, context may to save if a variable is var or val, for know i only will check the type
 def verify_(ctx: Context, node: Node):
@@ -98,21 +101,21 @@ def verify_(ctx: Context, node: Node):
 
         case While(guard, codeBlock):
             guardType = verify_(ctx, guard)
-            if guardType != [Type.BOOL]:
+            if guardType != Type(TypeEnum.BOOL):
                 print(f"Type of guard in while statement must be bool, got type {guardType}")
                 exit(3)
             verify_(ctx, codeBlock)
 
         case If(condition, thenBlock, elseBlock):
             conditionType = verify_(ctx, condition)
-            if conditionType != [Type.BOOL]:
+            if conditionType != Type(TypeEnum.BOOL):
                 print(f"Type of condition in if statement must be bool, got type {conditionType}")
                 exit(3)
             verify_(ctx, thenBlock)
             verify_(ctx, elseBlock)
 
         case FunctionCall(ident, args):
-            funcDef = ctx.getFunDef(ident)
+            funcDef = ctx.getFuncDef(ident)
             if not funcDef:
                 print(f"Function {ident} does not exist")
                 exit(3)
@@ -134,27 +137,27 @@ def verify_(ctx: Context, node: Node):
             rType = verify_(ctx, right)
 
             if op in [BinaryOp.EXP, BinaryOp.MULT, BinaryOp.DIV, BinaryOp.REM, BinaryOp.PLUS, BinaryOp.MINUS]:
-                if lType == [Type.FLT] or rType == [Type.FLT]:
-                    exprType = [Type.FLT]
-                elif lType == [Type.INT] and rType == [Type.INT]:
-                    exprType = [Type.INT]
+                if lType == Type(TypeEnum.FLT) or rType == Type(TypeEnum.FLT):
+                    exprType = Type(TypeEnum.FLT)
+                elif lType == Type(TypeEnum.INT) and rType == Type(TypeEnum.INT):
+                    exprType = Type(TypeEnum.INT)
                 else:
                     print(f"lhs and rhs must be int, int or int, float or float, float. Got type {lType}, {rType}")
                     exit(3)
 
 
             elif op in [BinaryOp.LT, BinaryOp.GT, BinaryOp.GTE, BinaryOp.EQ, BinaryOp.NEQ]:
-                if lType == [Type.FLT] or rType == [Type.FLT]:
-                    exprType =[Type.BOOL]
-                elif lType == [Type.INT] and rType == [Type.INT]:
-                    exprType =[Type.BOOL]
+                if lType == Type(TypeEnum.FLT) or rType == Type(TypeEnum.FLT):
+                    exprType =Type(TypeEnum.BOOL)
+                elif lType == Type(TypeEnum.INT) and rType == Type(TypeEnum.INT):
+                    exprType =Type(TypeEnum.BOOL)
                 else:
                     print(f"lhs and rhs must be int or float. Got type {lType}, {rType}")
                     exit(3)
 
             else:
-                if lType == [Type.BOOL] and rType == [Type.BOOL]:
-                    exprType =[Type.BOOL]
+                if lType == Type(TypeEnum.BOOL) and rType == Type(TypeEnum.BOOL):
+                    exprType =Type(TypeEnum.BOOL)
                 else:
                     print(f"lhs and rhs must be bool. Got type {lType}, {rType}")
                     exit(3)
@@ -168,7 +171,7 @@ def verify_(ctx: Context, node: Node):
         case Unary(op, expression):
             type = verify_(ctx, expression)
             if op == UnaryOp.NEGATION:
-                if type in [[Type.INT], [Type.FLT]]:
+                if type in [Type(TypeEnum.INT), Type(TypeEnum.FLT)]:
                     node.exprType = type
                     return type
                 else:
@@ -176,11 +179,11 @@ def verify_(ctx: Context, node: Node):
                     exit(3)
 
             elif op == UnaryOp.NOT:
-                if type == [Type.BOOL]:
+                if type == Type(TypeEnum.BOOL):
                     print(f"Operand of negation must be a int or float. Got type {type}")
                     exit(3)
-                node.exprType = [Type.BOOL]
-                return [Type.BOOL]
+                node.exprType = Type(TypeEnum.BOOL)
+                return Type(TypeEnum.BOOL)
 
         case Ident(ident):
             idType = ctx.getType(ident)
@@ -199,7 +202,9 @@ def verify_(ctx: Context, node: Node):
 def verify(ctx: Context, node: Node):
     verify_(ctx, node)
 
-    if not ctx.getFunDef("main"):
+    # We check if noFuncDefs so plus in interpreter mode doesnt crash, but this moght accept an incorrect
+    # program, a program with no function definitions
+    if not ctx.getFuncDef("main") and not ctx.noFuncDefs:
         print("ERROR: Program is required to have a main function")
         exit(3)
 

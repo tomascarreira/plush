@@ -21,6 +21,7 @@ tokens = [
 	"STR_LITERAL",
 	"INT_LITERAL",
 	"FLT_LITERAL",
+	"CHR_LITERAL",
 	"IDENT",
 	"LPAREN",
 	"RPAREN",
@@ -87,6 +88,11 @@ def t_INT_LITERAL(t):
 
 def t_STR_LITERAL(t):
 	r"\".*\""
+	t.value = str(t.value)[1:-1]
+	return t
+
+def t_CHR_LITERAL(t):
+	r"'.'"
 	t.value = str(t.value)[1:-1]
 	return t
 
