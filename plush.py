@@ -36,8 +36,8 @@ def pp_ast(node, depth=0):
             print(f"Assignment {ident}")
 
             if indexing:
-                print(f"{depth}", "  "*depth, end="")
-                print("  ", "Indexing")
+                print("  "*depth, end="")
+                print(" ", "Indexing")
                 pp_ast(indexing, depth+2)
 
             pp_ast(rhs, depth+1)
@@ -89,4 +89,3 @@ if __name__ == "__main__":
             ast = parse(input, parserStart="statement")
             pp_ast(ast)
             verify(Context(), ast)
-

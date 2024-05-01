@@ -2,8 +2,10 @@
 
 implement argparse for a better cli
 
-arranjar maneira de quando houver um error dar a linha
+indexing lhs é o mesmo que indexing rhs???
 
 interpretador
 
 code genation
+
+criar mais e melhores testes

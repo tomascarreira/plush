@@ -56,7 +56,7 @@ def verify_(ctx: Context, node: Node):
         case VariableDefinition(varType, ident, type, rhs):
             rhsType = verify_(ctx, rhs)
             if type != rhsType:
-                print(f"Righ hand side expression is type {rhsType} but its declare to have type {type}")
+                print(f"Righ hand side expression is type {rhsType} but its declare to have type {type}. On line {node.lineno}")
                 exit(3)
             ctx.add(ident, type, varType)
 
@@ -82,12 +82,8 @@ def verify_(ctx: Context, node: Node):
 
         case Assignment(ident, indexing, rhs):
             type = verify_(ctx, rhs) 
-            # TODO: make it work for multiple indexings, for now only works with a single indexing, 
-            # Hint: find the number of indexings and remove that number from the front of the list
-            if indexing:
-                type = type[1:]
             if not type:
-                print(f"Cannot do an assingment to a variable that does not exist")
+                print(f"Cannot do an assingment to a variable that does not exist. On line {node.lineno}")
                 exit(3)
             # TODO: handle when there is no return type
             # if ctxType == Special.RETURN_VAR:
@@ -98,25 +94,30 @@ def verify_(ctx: Context, node: Node):
             # else:
             ctxVarType = ctx.getVarType(ident)
             if ctxVarType == VarType.VAL:
-                print(f"Cannot assign to val variable {ident}")
+                print(f"Cannot assign to val variable {ident}. On line {node.lineno}")
                 exit(3)
 
             ctxType = ctx.getType(ident)
+            # TODO: make it work for multiple indexings, for now only works with a single indexing, 
+            # Hint: find the number of indexings and remove that number from the front of the list
+            if indexing:
+                ctxType = Type(ctxType.type, ctxType.listDepth - 1)
+
             if type != ctxType:
-                print(f"Cannot assign {type} to a variable with type {ctxType}")
+                print(f"Cannot assign {type} to a variable with type {ctxType}. On line {node.lineno}")
                 exit(3)
 
         case While(guard, codeBlock):
             guardType = verify_(ctx, guard)
             if guardType != Type(TypeEnum.BOOL):
-                print(f"Type of guard in while statement must be bool, got type {guardType}")
+                print(f"Type of guard in while statement must be bool, got type {guardType}. On line {node.lineno}")
                 exit(3)
             verify_(ctx, codeBlock)
 
         case If(condition, thenBlock, elseBlock):
             conditionType = verify_(ctx, condition)
             if conditionType != Type(TypeEnum.BOOL):
-                print(f"Type of condition in if statement must be bool, got type {conditionType}")
+                print(f"Type of condition in if statement must be bool, got type {conditionType}. On line {node.lineno}")
                 exit(3)
             verify_(ctx, thenBlock)
             verify_(ctx, elseBlock)
@@ -124,15 +125,15 @@ def verify_(ctx: Context, node: Node):
         case FunctionCall(ident, args):
             funcDef = ctx.getFuncDef(ident)
             if not funcDef:
-                print(f"Function {ident} does not exist")
+                print(f"Function {ident} does not exist. On line {node.lineno}")
                 exit(3)
             if len(funcDef.args) != len(args):
-                print(f"In function call expected {len(funcDef.args)} arguments, got {len(args)}")
+                print(f"In function call expected {len(funcDef.args)} arguments, got {len(args)}. On line {node.lineno}")
                 exit(3)
             for call, (_, argIdent, defiType) in zip(args, funcDef.args):
                 argType = verify_(ctx, call)
                 if defiType != argType:
-                    print(f"Expected {argIdent} argument to have type {defiType} got type {argType}")
+                    print(f"Expected {argIdent} argument to have type {defiType} got type {argType}. On line {node.lineno}")
                     exit(3)
 
             node.exprType = funcDef.retType
@@ -143,13 +144,24 @@ def verify_(ctx: Context, node: Node):
             lType = verify_(ctx, left)
             rType = verify_(ctx, right)
 
-            if op in [BinaryOp.EXP, BinaryOp.MULT, BinaryOp.DIV, BinaryOp.REM, BinaryOp.PLUS, BinaryOp.MINUS]:
+            if op == BinaryOp.INDEXING:
+                if rType != Type(TypeEnum.INT):
+                    print(f"Indexing expression must be an int. On line {node.lineno}")
+                    exit(3)
+
+                if lType.listDepth < 1:
+                    print(f"Cannot index not list type. On line {node.lineno}")
+                    exit(3)
+
+                exprType = Type(lType.type, lType.listDepth - 1)
+
+            elif op in [BinaryOp.EXP, BinaryOp.MULT, BinaryOp.DIV, BinaryOp.REM, BinaryOp.PLUS, BinaryOp.MINUS]:
                 if lType == Type(TypeEnum.FLT) or rType == Type(TypeEnum.FLT):
                     exprType = Type(TypeEnum.FLT)
                 elif lType == Type(TypeEnum.INT) and rType == Type(TypeEnum.INT):
                     exprType = Type(TypeEnum.INT)
                 else:
-                    print(f"lhs and rhs must be int, int or int, float or float, float. Got type {lType}, {rType}")
+                    print(f"lhs and rhs must be int, int or int, float or float, float. Got type {lType}, {rType}. On line {node.lineno}")
                     exit(3)
 
 
@@ -159,14 +171,14 @@ def verify_(ctx: Context, node: Node):
                 elif lType == Type(TypeEnum.INT) and rType == Type(TypeEnum.INT):
                     exprType =Type(TypeEnum.BOOL)
                 else:
-                    print(f"lhs and rhs must be int or float. Got type {lType}, {rType}")
+                    print(f"lhs and rhs must be int or float. Got type {lType}, {rType}. On line {node.lineno}")
                     exit(3)
 
             else:
                 if lType == Type(TypeEnum.BOOL) and rType == Type(TypeEnum.BOOL):
                     exprType =Type(TypeEnum.BOOL)
                 else:
-                    print(f"lhs and rhs must be bool. Got type {lType}, {rType}")
+                    print(f"lhs and rhs must be bool. Got type {lType}, {rType}. On line {node.lineno}")
                     exit(3)
 
             node.exprType = exprType
@@ -182,12 +194,12 @@ def verify_(ctx: Context, node: Node):
                     node.exprType = type
                     return type
                 else:
-                    print(f"Operand of negation must be a int or float. Got type {type}")
+                    print(f"Operand of negation must be a int or float. Got type {type}. On line {node.lineno}")
                     exit(3)
 
             elif op == UnaryOp.NOT:
                 if type == Type(TypeEnum.BOOL):
-                    print(f"Operand of negation must be a int or float. Got type {type}")
+                    print(f"Operand of negation must be a int or float. Got type {type}. On line {node.lineno}")
                     exit(3)
                 node.exprType = Type(TypeEnum.BOOL)
                 return Type(TypeEnum.BOOL)
@@ -195,7 +207,7 @@ def verify_(ctx: Context, node: Node):
         case Ident(ident):
             idType = ctx.getType(ident)
             if not idType:
-                print(f"Variable {ident} not defined")
+                print(f"Variable {ident} not defined. On line {node.lineno}")
                 exit(3)
 
             node.exprType = idType

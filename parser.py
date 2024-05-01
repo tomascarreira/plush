@@ -126,14 +126,13 @@ class BinaryOp(Enum):
         return res
 
 class Node:
-    pass
+    lineno: int = None
     
 class Statement(Node):
     pass
 
 class Expression(Node):
     exprType: Type
-    pass
 
 @dataclass
 class Unary(Expression):
@@ -253,7 +252,9 @@ def p_definition2(p):
 
 def p_variableDefiniton(p):
     "variableDefinition : varType IDENT COLON type COLON_EQUALS expression SEMICOLON"
-    p[0] = VariableDefinition(p[1], p[2], p[4], p[6])
+    varDef = VariableDefinition(p[1], p[2], p[4], p[6])
+    varDef.lineno = p.lineno(2)
+    p[0] = varDef
 
 def p_varType1(p):
     "varType : VAR"
@@ -265,13 +266,17 @@ def p_varType2(p):
 
 def p_functionDefinition(p):
     "functionDefinition : functionHeader codeBlock"
-    p[0] = FunctionDefinition(p[1], p[2])
+    funcDef = FunctionDefinition(p[1], p[2])
+    funcDef.lineno = p.lineno(1)
+    p[0] = funcDef
 
 def p_functionHeader(p):
     "functionHeader : FUNCTION IDENT LPAREN functionArguments RPAREN returnType"
     if not p[6]:
         p[6] = Type(TypeEnum.VOID)
-    p[0] = Declaration(p[2], p[4], p[6])
+    dec = Declaration(p[2], p[4], p[6])
+    dec.lineno = p.lineno(2)
+    p[0] = dec
 
 def p_fucntionArguments1(p):
     "functionArguments : "
@@ -374,7 +379,9 @@ def p_statement6(p):
 
 def p_ifStatement1(p):
     "ifStatement : IF expression codeBlock"
-    p[0] = If(p[2], p[3], None)
+    if_ = If(p[2], p[3], None)
+    if_.lineno = p.lineno(1)
+    p[0] = if_
 
 def p_ifStatement2(p):
     "ifStatement : IF expression codeBlock ELSE codeBlock"
@@ -382,11 +389,15 @@ def p_ifStatement2(p):
 
 def p_wileStatement(p):
     "whileStatement : WHILE expression codeBlock"
-    p[0] = While(p[2], p[3])
+    whl = While(p[2], p[3])
+    whl.lineno = p.lineno(1)
+    p[0] = whl
 
 def p_variableAssignment(p):
     "variableAssingment : leftHandSide COLON_EQUALS expression SEMICOLON"
-    p[0] = Assignment(p[1][0], p[1][1], p[3])
+    ass = Assignment(p[1][0], p[1][1], p[3])
+    ass.lineno = p.lineno(2)
+    p[0] = ass
 
 def p_leftHandSide1(p):
     "leftHandSide : IDENT"
@@ -406,71 +417,105 @@ def p_expression1(p):
 
 def p_expression2(p):
     "expression : expression indexAccess"
-    p[0] = Binary(BinaryOp.INDEXING, p[1], p[2])
+    bin = Binary(BinaryOp.INDEXING, p[1], p[2])
+    bin.lineno = p.lineno(1)
+    p[0] = bin
 
 def p_expression3(p):
     "expression : MINUS expression %prec NEGATION"
-    p[0] = Unary(UnaryOp.NEGATION, p[2])
+    un = Unary(UnaryOp.NEGATION, p[2])
+    un.lineno = p.lineno(2)
+    p[0] = un
 
 def p_expression4(p):
     "expression : EXCLAMATION expression"
-    p[0] = Unary(UnaryOp.NOT, p[2])
+    un = Unary(UnaryOp.NOT, p[2])
+    un.lineno = p.lineno(2)
+    p[0] = un
 
 def p_expression5(p):
     "expression : expression CIRCUMFLEX expression"
-    p[0] = Binary(BinaryOp.EXP, p[1], p[3])
+    bin = Binary(BinaryOp.EXP, p[1], p[3])
+    bin.lineno = p.lineno(1)
+    p[0] = bin
 
 def p_expression6(p):
     "expression : expression STAR expression"
-    p[0] = Binary(BinaryOp.MULT, p[1], p[3])
+    bin = Binary(BinaryOp.MULT, p[1], p[3])
+    bin.lineno = p.lineno(1)
+    p[0] = bin
 
 def p_expression7(p):
     "expression : expression SLASH expression"
-    p[0] = Binary(BinaryOp.DIV, p[1], p[3])
+    bin = Binary(BinaryOp.DIV, p[1], p[3])
+    bin.lineno = p.lineno(1)
+    p[0] = bin
 
 def p_expression8(p):
     "expression : expression PERCENT expression"
-    p[0] = Binary(BinaryOp.REM, p[1], p[3])
+    bin = Binary(BinaryOp.REM, p[1], p[3])
+    bin.lineno = p.lineno(1)
+    p[0] = bin
 
 def p_expression9(p):
     "expression : expression PLUS expression"
-    p[0] = Binary(BinaryOp.PLUS, p[1], p[3])
+    bin = Binary(BinaryOp.PLUS, p[1], p[3])
+    bin.lineno = p.lineno(1)
+    p[0] = bin
 
 def p_expression10(p):
     "expression : expression MINUS expression"
-    p[0] = Binary(BinaryOp.MINUS, p[1], p[3])
+    bin = Binary(BinaryOp.MINUS, p[1], p[3])
+    bin.lineno = p.lineno(1)
+    p[0] = bin
 
 def p_expression11(p):
     "expression : expression LESS expression"
-    p[0] = Binary(BinaryOp.LT, p[1], p[3])
+    bin = Binary(BinaryOp.LT, p[1], p[3])
+    bin.lineno = p.lineno(1)
+    p[0] = bin
 
 def p_expression12(p):
     "expression : expression LESS_EQUALS expression"
-    p[0] = Binary(BinaryOp.LTE, p[1], p[3])
+    bin = Binary(BinaryOp.LTE, p[1], p[3])
+    bin.lineno = p.lineno(1)
+    p[0] = bin
 
 def p_expression13(p):
     "expression : expression GREATER expression"
-    p[0] = Binary(BinaryOp.GT, p[1], p[3])
+    bin = Binary(BinaryOp.GT, p[1], p[3])
+    bin.lineno = p.lineno(1)
+    p[0] = bin
 
 def p_expression14(p):
     "expression : expression GREATER_EQUALS expression"
-    p[0] = Binary(BinaryOp.GTE, p[1], p[3])
+    bin = Binary(BinaryOp.GTE, p[1], p[3])
+    bin.lineno = p.lineno(1)
+    p[0] = bin
 
 def p_expression15(p):
     "expression : expression EQUALS expression"
-    p[0] = Binary(BinaryOp.EQ, p[1], p[3])
+    bin = Binary(BinaryOp.EQ, p[1], p[3])
+    bin.lineno = p.lineno(1)
+    p[0] = bin
 
 def p_expression16(p):
     "expression : expression EXCLAMATION_EQUALS expression"
-    p[0] = Binary(BinaryOp.NEQ, p[1], p[3])
+    bin = Binary(BinaryOp.NEQ, p[1], p[3])
+    bin.lineno = p.lineno(1)
+    p[0] = bin
 
 def p_expression17(p):
     "expression : expression AMPERSAND_AMPERSAND expression"
-    p[0] = Binary(BinaryOp.AND, p[1], p[3])
+    bin = Binary(BinaryOp.AND, p[1], p[3])
+    bin.lineno = p.lineno(1)
+    p[0] = bin
 
 def p_expression18(p):
     "expression : expression PIPE_PIPE expression"
-    p[0] = Binary(BinaryOp.OR, p[1], p[3])
+    bin = Binary(BinaryOp.OR, p[1], p[3])
+    bin.lineno = p.lineno(1)
+    p[0] = bin
 
 def p_expression19(p):
     "expression : TRUE"
@@ -510,7 +555,9 @@ def p_functionCall1(p):
 
 def p_functionCall2(p):
     "functionCall : IDENT LPAREN functionCallArguments RPAREN"
-    p[0] = FunctionCall(p[1], p[3])
+    funcCall = FunctionCall(p[1], p[3])
+    funcCall.lineno = p.lineno(1)
+    p[0] = funcCall
 
 def p_functionCallArguments1(p):
     "functionCallArguments : expression"
