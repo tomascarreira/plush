@@ -174,8 +174,12 @@ def verify_(ctx: Context, node: Node):
                 return [Type.BOOL]
 
         case Ident(ident):
-            # TODO: handle when variable doesnt exist (is None)
-            return ctx.getType(ident)
+            idType = ctx.getType(ident)
+            if not idType:
+                print(f"Variable {ident} not defined")
+                exit(3)
+
+            return idType
 
         case Literal(val, type):
             return type
