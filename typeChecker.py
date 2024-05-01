@@ -3,11 +3,6 @@ from enum import Enum
 from parser import Node, Program, Declaration, VariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, FunctionCall, Binary, Unary, Ident, Literal
 from parser import Type, TypeEnum, BinaryOp, UnaryOp
 
-old_type = type
-
-# class Special(Enum):
-#     RETURN_VAR = 0
-
 class Context:
     def __init__(self):
         self.stack = [{}]
@@ -146,7 +141,7 @@ def verify_(ctx: Context, node: Node):
                     exit(3)
 
 
-            elif op in [BinaryOp.LT, BinaryOp.GT, BinaryOp.GTE, BinaryOp.EQ, BinaryOp.NEQ]:
+            elif op in [BinaryOp.LT, BinaryOp.LTE, BinaryOp.GT, BinaryOp.GTE, BinaryOp.EQ, BinaryOp.NEQ]:
                 if lType == Type(TypeEnum.FLT) or rType == Type(TypeEnum.FLT):
                     exprType =Type(TypeEnum.BOOL)
                 elif lType == Type(TypeEnum.INT) and rType == Type(TypeEnum.INT):
