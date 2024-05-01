@@ -64,6 +64,15 @@ class UnaryOp(Enum):
     NEGATION = 0
     NOT = 1
 
+    def __str__(self):
+        match self:
+            case UnaryOp.NEGATION:
+                res = "-"
+            case UnaryOp.NOT:
+                res = "!"
+
+        return res
+
 class BinaryOp(Enum):
     EXP = 0
     MULT = 1
