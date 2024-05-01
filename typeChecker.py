@@ -45,7 +45,6 @@ def verify_(ctx: Context, node: Node):
             [verify_(ctx, decl) for decl in decs[::-1]]
             [verify_(ctx, defi) for defi in defs[::-1]]
 
-        # declaration are always correct for the type checker ??
         case Declaration(ident, args, retType):
             [ctx.addFuncDef(node)]
 
@@ -113,7 +112,6 @@ def verify_(ctx: Context, node: Node):
             verify_(ctx, elseBlock)
 
         case FunctionCall(ident, args):
-            # can return None, do error check
             funcDef = ctx.getFunDef(ident)
             if not funcDef:
                 print(f"Function {ident} does not exist")
@@ -126,6 +124,9 @@ def verify_(ctx: Context, node: Node):
                 if defiType != argType:
                     print(f"Expected {argIdent} argument to have type {defiType} got type {argType}")
                     exit(3)
+
+            node.exprType = funcDef.retType
+
             return funcDef.retType
 
         case Binary(op, left, right):
@@ -134,34 +135,41 @@ def verify_(ctx: Context, node: Node):
 
             if op in [BinaryOp.EXP, BinaryOp.MULT, BinaryOp.DIV, BinaryOp.REM, BinaryOp.PLUS, BinaryOp.MINUS]:
                 if lType == [Type.FLT] or rType == [Type.FLT]:
-                    return [Type.FLT]
+                    exprType = [Type.FLT]
                 elif lType == [Type.INT] and rType == [Type.INT]:
-                    return [Type.INT]
+                    exprType = [Type.INT]
                 else:
                     print(f"lhs and rhs must be int, int or int, float or float, float. Got type {lType}, {rType}")
                     exit(3)
 
+
             elif op in [BinaryOp.LT, BinaryOp.GT, BinaryOp.GTE, BinaryOp.EQ, BinaryOp.NEQ]:
                 if lType == [Type.FLT] or rType == [Type.FLT]:
-                    return [Type.BOOL]
+                    exprType =[Type.BOOL]
                 elif lType == [Type.INT] and rType == [Type.INT]:
-                    return [Type.BOOL]
+                    exprType =[Type.BOOL]
                 else:
                     print(f"lhs and rhs must be int or float. Got type {lType}, {rType}")
                     exit(3)
 
             else:
                 if lType == [Type.BOOL] and rType == [Type.BOOL]:
-                    return [Type.BOOL]
+                    exprType =[Type.BOOL]
                 else:
                     print(f"lhs and rhs must be bool. Got type {lType}, {rType}")
                     exit(3)
+
+            node.exprType = exprType
+
+            return exprType
+
 
 
         case Unary(op, expression):
             type = verify_(ctx, expression)
             if op == UnaryOp.NEGATION:
                 if type in [[Type.INT], [Type.FLT]]:
+                    node.exprType = type
                     return type
                 else:
                     print(f"Operand of negation must be a int or float. Got type {type}")
@@ -171,6 +179,7 @@ def verify_(ctx: Context, node: Node):
                 if type == [Type.BOOL]:
                     print(f"Operand of negation must be a int or float. Got type {type}")
                     exit(3)
+                node.exprType = [Type.BOOL]
                 return [Type.BOOL]
 
         case Ident(ident):
@@ -179,9 +188,12 @@ def verify_(ctx: Context, node: Node):
                 print(f"Variable {ident} not defined")
                 exit(3)
 
+            node.exprType = idType
+
             return idType
 
         case Literal(val, type):
+            node.exprType = type
             return type
 
 def verify(ctx: Context, node: Node):

@@ -46,6 +46,7 @@ class Statement(Node):
     pass
 
 class Expression(Node):
+    exprType: list[Type]
     pass
 
 @dataclass
