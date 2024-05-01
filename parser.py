@@ -182,6 +182,8 @@ def p_functionDefinition(p):
 
 def p_functionHeader(p):
     "functionHeader : FUNCTION IDENT LPAREN functionArguments RPAREN returnType"
+    if not p[6]:
+        p[6] = Type.VOID
     p[0] = Declaration(p[2], p[4], p[6])
 
 def p_fucntionArguments1(p):
