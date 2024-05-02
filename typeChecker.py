@@ -66,11 +66,11 @@ def verify_(ctx: Context, node: Node):
             [ctx.add(ident, type, varType)  for (varType, ident, type) in functionHeader.args]
             # Add to the context the name of the functions so it is possible to verify the type of
             # the return, it is done in the assignment rule
+            ctx.newScope()
             ctx.add(functionHeader.ident, functionHeader.retType, VarType.VAR)
             ctx.addFuncDef(functionHeader)
             verify_(ctx, codeBlock)
-            ctx.remove(functionHeader.ident)
-            [ctx.remove(ident)  for (_, ident, _) in functionHeader.args]
+            ctx.popScope()
 
         case CodeBlock(statements):
             ctx.newScope()

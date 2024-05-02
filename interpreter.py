@@ -22,7 +22,7 @@ class Context:
     def getVal(self, ident):
         for scope in self.environment[::-1]:
             if ident in scope:
-                return scope[ident] 
+                return scope[ident]
 
     def addFunDef(self, ident, functionHeader, codeBlock):
         self.funDefs[ident] = (functionHeader, codeBlock)
@@ -54,8 +54,11 @@ def eval(node, ctx: Context):
             ctx.popScope()
 
         case Assignment(ident, indexing, rhs):
-            # TODO: support indexing
-            ctx.addVal(ident, eval(rhs,ctx))
+            rhsVal = eval(rhs, ctx)
+            if indexing:
+                ctx.getVal(ident)[eval(indexing, ctx)]
+            else:
+                ctx.addVal(ident, rhsVal)
 
         case While(guard, codeBlock):
             while eval(guard, ctx):
@@ -71,17 +74,22 @@ def eval(node, ctx: Context):
             funDef = ctx.getFunDef(ident)
             if not funDef:
 
+                res = None
                 match ident:
                     case "print_int":
                         print(eval(args[0], ctx))
                     case "print_bool":
                         print(eval(args[0], ctx))
+                    case "print_int_array":
+                        print(eval(args[0], ctx))
+                    case "int_array":
+                        res = []
                 
                     case _:
                         print(f"Dont recognonize function {ident}")
                         exit(4)
 
-                return
+                return res
 
             functionHeader, codeBlock = funDef
 
@@ -130,9 +138,8 @@ def eval(node, ctx: Context):
                     res = l and r
                 case BinaryOp.OR:
                     res = l or r
-                # TODO: support indexing
                 case BinaryOp.INDEXING:
-                    pass
+                    res = l[r]
 
             return res
 
