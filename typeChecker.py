@@ -1,5 +1,3 @@
-from enum import Enum
-
 from parser import Node, Program, Declaration, VariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, FunctionCall, Binary, Unary, Ident, Literal
 from parser import Type, TypeEnum, VarType, BinaryOp, UnaryOp
 

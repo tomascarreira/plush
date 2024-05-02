@@ -1,7 +1,8 @@
 import sys
 
-from parser import parse
-from typeChecker import verify, Context
+from parser import parse, Declaration, Type, TypeEnum
+from typeChecker import verify, Context as TypeContext
+from interpreter import eval, Context as ValueContext
 from pretty_print import pp_ast
 
 if __name__ == "__main__":
@@ -10,12 +11,16 @@ if __name__ == "__main__":
         with open(sys.argv[1]) as file:
             input = file.read()
             ast = parse(input)
-            verify(Context(), ast)
+            verify(TypeContext(), ast)
             pp_ast(ast)
+            eval(ast, ValueContext())
 
     else:
         while True:
             input = sys.stdin.readline()
             ast = parse(input, parserStart="statement")
-            verify(Context(), ast)
+            typeCtx = TypeContext()
+            typeCtx.addFuncDef(Declaration("print_int", [("var", "n", Type(TypeEnum.INT))], Type(TypeEnum.VOID)))
+            verify(typeCtx, ast)
             pp_ast(ast)
+            eval(ast, ValueContext)
