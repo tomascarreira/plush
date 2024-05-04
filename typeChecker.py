@@ -41,7 +41,6 @@ class Context:
     def noFuncDefs(self):
         return len(self.funcDefs) == 0
 
-# To verify the correct use of var and val, context may to save if a variable is var or val, for know i only will check the type
 def verify_(ctx: Context, node: Node):
     match node:
         case Program(decs, defs):
@@ -59,45 +58,33 @@ def verify_(ctx: Context, node: Node):
             ctx.add(ident, type, varType)
 
         case FunctionDefinition(functionHeader, codeBlock):
-            # here we can check if a name of a function repeats
-            # change here to check for val and var use
-            # Maybe wrong variables get add to the old scope not the newone
-            # Fix can be to havve a function block so it can have a diferent behaviour from codeBlock
             [ctx.add(ident, type, varType)  for (varType, ident, type) in functionHeader.args]
-            # Add to the context the name of the functions so it is possible to verify the type of
-            # the return, it is done in the assignment rule
             ctx.newScope()
             ctx.add(functionHeader.ident, functionHeader.retType, VarType.VAR)
+            if ctx.getFuncDef(functionHeader.ident):
+                print(f"Function {functionHeader.ident} cannot be re-defined")
+                exit(3)
             ctx.addFuncDef(functionHeader)
             verify_(ctx, codeBlock)
             ctx.popScope()
 
         case CodeBlock(statements):
             ctx.newScope()
-            # inverse the order of the statementes because the parsing puts them in reverse order
             [verify_(ctx, stm) for stm in statements[::-1]]
             ctx.popScope()
 
         case Assignment(ident, indexing, rhs):
             type = verify_(ctx, rhs) 
-            if not type:
-                print(f"Cannot do an assingment to a variable that does not exist. On line {node.lineno}")
-                exit(3)
             # TODO: handle when there is no return type
-            # if ctxType == Special.RETURN_VAR:
-            #     returnType = ctx.getFunDef(ident).retType
-            #     if type != returnType:
-            #         print(f"type {type} does not match return type of function declared {returnType}")
-            #         exit(3)
-            # else:
             ctxVarType = ctx.getVarType(ident)
             if ctxVarType == VarType.VAL:
                 print(f"Cannot assign to val variable {ident}. On line {node.lineno}")
                 exit(3)
 
             ctxType = ctx.getType(ident)
-            # TODO: make it work for multiple indexings, for now only works with a single indexing, 
-            # Hint: find the number of indexings and remove that number from the front of the list
+            if not ctxType:
+                print(f"Cannot do an assingment to a variable that does not exist. On line {node.lineno}")
+                exit(3)
             if indexing:
                 ctxType = Type(ctxType.type, ctxType.listDepth - 1)
 
@@ -162,7 +149,6 @@ def verify_(ctx: Context, node: Node):
                     print(f"lhs and rhs must be int, int or int, float or float, float. Got type {lType}, {rType}. On line {node.lineno}")
                     exit(3)
 
-
             elif op in [BinaryOp.LT, BinaryOp.LTE, BinaryOp.GT, BinaryOp.GTE, BinaryOp.EQ, BinaryOp.NEQ]:
                 if lType == Type(TypeEnum.FLT) or rType == Type(TypeEnum.FLT):
                     exprType =Type(TypeEnum.BOOL)
@@ -182,8 +168,6 @@ def verify_(ctx: Context, node: Node):
             node.exprType = exprType
 
             return exprType
-
-
 
         case Unary(op, expression):
             type = verify_(ctx, expression)

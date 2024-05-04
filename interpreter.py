@@ -56,7 +56,8 @@ def eval(node, ctx: Context):
         case Assignment(ident, indexing, rhs):
             rhsVal = eval(rhs, ctx)
             if indexing:
-                ctx.getVal(ident)[eval(indexing, ctx)]
+                index = eval(indexing, ctx)
+                ctx.getVal(ident)[index] = rhsVal
             else:
                 ctx.addVal(ident, rhsVal)
 
@@ -83,7 +84,9 @@ def eval(node, ctx: Context):
                     case "print_int_array":
                         print(eval(args[0], ctx))
                     case "int_array":
-                        res = []
+                        res = eval(args[0], ctx)*[0]
+                    case "int_array_array":
+                        res = eval(args[0], ctx)*[[]]
                 
                     case _:
                         print(f"Dont recognonize function {ident}")
@@ -140,8 +143,6 @@ def eval(node, ctx: Context):
                     res = l or r
                 case BinaryOp.INDEXING:
                     res = l[r]
-
-            print(op, l, r, res)
 
             return res
 
