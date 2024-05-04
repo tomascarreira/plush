@@ -1,4 +1,4 @@
-from parser import Node, Program, Declaration, VariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, FunctionCall, Binary, Unary, Ident, Literal
+from parser import Node, Expression, Program, Declaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, Binary, Unary, Ident, Literal
 from parser import Type, TypeEnum, VarType, BinaryOp, UnaryOp
 
 class Context:
@@ -41,6 +41,24 @@ class Context:
     def noFuncDefs(self):
         return len(self.funcDefs) == 0
 
+# Verifies if my interpreter can calculate the value for the llvm ir codegen
+def checkCompileTimeConst(expr: Expression) -> bool:
+    match expr:
+        case FunctionCall(ident, args):
+            return False
+
+        case Binary(op, left, right):
+            return checkCompileTimeConst(left) and checkCompileTimeConst(right)
+
+        case Unary(op, expression):
+            return checkCompileTimeConst(expression)
+
+        case Ident(ident):
+            return False
+
+        case Literal(val, type):
+            return True
+
 def verify_(ctx: Context, node: Node):
     match node:
         case Program(decs, defs):
@@ -50,7 +68,10 @@ def verify_(ctx: Context, node: Node):
         case Declaration(ident, args, retType):
             [ctx.addFuncDef(node)]
 
-        case VariableDefinition(varType, ident, type, rhs):
+        case GlobalVariableDefinition(varType, ident, type, rhs):
+            if not checkCompileTimeConst(rhs):
+                print(f"Global variable must be compile-time constant. On line {node.lineno}")
+                exit(3)
             rhsType = verify_(ctx, rhs)
             if type != rhsType:
                 print(f"Righ hand side expression is type {rhsType} but its declare to have type {type}. On line {node.lineno}")
@@ -72,6 +93,13 @@ def verify_(ctx: Context, node: Node):
             ctx.newScope()
             [verify_(ctx, stm) for stm in statements[::-1]]
             ctx.popScope()
+
+        case VariableDefinition(varType, ident, type, rhs):
+            rhsType = verify_(ctx, rhs)
+            if type != rhsType:
+                print(f"Righ hand side expression is type {rhsType} but its declare to have type {type}. On line {node.lineno}")
+                exit(3)
+            ctx.add(ident, type, varType)
 
         case Assignment(ident, indexing, rhs):
             type = verify_(ctx, rhs) 

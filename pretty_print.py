@@ -1,4 +1,4 @@
-from parser import Node, Program, Declaration, VariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, FunctionCall, Binary, Unary, Ident, Literal
+from parser import Node, Program, Declaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, Binary, Unary, Ident, Literal
 from parser import Type, BinaryOp, UnaryOp
 
 def pp_ast(node, depth=0):
@@ -15,8 +15,8 @@ def pp_ast(node, depth=0):
             print(f"Function Declaration {ident} {retType}")
             print("\n".join(f"  Function Argument {arg[0]} {arg[1]} {arg[2]}" for arg in args))
 
-        case VariableDefinition(varType, ident, type, rhs):
-            print(f"Variable Definition {varType} {ident} {type}")
+        case GlobalVariableDefinition(varType, ident, type, rhs):
+            print(f"GlobalVariable Definition {varType} {ident} {type}")
             pp_ast(rhs, depth+1)
 
         case FunctionDefinition(functionHeader, codeBlock):
@@ -49,6 +49,10 @@ def pp_ast(node, depth=0):
             pp_ast(condition, depth+1)
             pp_ast(thenBlock, depth+1)
             pp_ast(elseBlock, depth+1)
+
+        case VariableDefinition(varType, ident, type, rhs):
+            print(f"Variable Definition {varType} {ident} {type}")
+            pp_ast(rhs, depth+1)
 
         case FunctionCall(ident, args):
             print(f"Function Call {ident}", f"{node.exprType}" if node.exprType else "")

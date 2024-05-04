@@ -180,6 +180,12 @@ class Assignment(Statement):
     indexing: Expression
     rhs: Expression
 
+@dataclass
+class VariableDefinition(Statement):
+    varType: VarType
+    ident: str
+    type: Type
+    rhs: Expression
 
 @dataclass
 class Declaration(Node):
@@ -191,7 +197,7 @@ class Definition(Node):
     pass
 
 @dataclass
-class VariableDefinition(Definition, Statement):
+class GlobalVariableDefinition(Definition):
     varType: VarType
     ident: str
     type: Type
@@ -243,18 +249,18 @@ def p_declaration(p):
     p[0] = p[1]
 
 def p_definition1(p):
-    "definition : variableDefinition"
+    "definition : globalVariableDefinition"
     p[0] = p[1]
 
 def p_definition2(p):
     "definition : functionDefinition"
     p[0] = p[1]
 
-def p_variableDefiniton(p):
-    "variableDefinition : varType IDENT COLON type COLON_EQUALS expression SEMICOLON"
-    varDef = VariableDefinition(p[1], p[2], p[4], p[6])
-    varDef.lineno = p.lineno(2)
-    p[0] = varDef
+def p_globalVariableDefiniton(p):
+    "globalVariableDefinition : varType IDENT COLON type COLON_EQUALS expression SEMICOLON"
+    globVarDef = GlobalVariableDefinition(p[1], p[2], p[4], p[6])
+    globVarDef.lineno = p.lineno(2)
+    p[0] = globVarDef
 
 def p_varType1(p):
     "varType : VAR"
@@ -392,6 +398,12 @@ def p_wileStatement(p):
     whl = While(p[2], p[3])
     whl.lineno = p.lineno(1)
     p[0] = whl
+
+def p_variableDefiniton(p):
+    "variableDefinition : varType IDENT COLON type COLON_EQUALS expression SEMICOLON"
+    varDef = VariableDefinition(p[1], p[2], p[4], p[6])
+    varDef.lineno = p.lineno(2)
+    p[0] = VarDef
 
 def p_variableAssignment(p):
     "variableAssingment : leftHandSide COLON_EQUALS expression SEMICOLON"
