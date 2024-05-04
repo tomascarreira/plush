@@ -267,7 +267,7 @@ def p_varType2(p):
 def p_functionDefinition(p):
     "functionDefinition : functionHeader codeBlock"
     funcDef = FunctionDefinition(p[1], p[2])
-    funcDef.lineno = p.lineno(1)
+    funcDef.lineno = p[1].lineno
     p[0] = funcDef
 
 def p_functionHeader(p):
@@ -418,103 +418,103 @@ def p_expression1(p):
 def p_expression2(p):
     "expression : expression indexAccess"
     bin = Binary(BinaryOp.INDEXING, p[1], p[2])
-    bin.lineno = p.lineno(1)
+    bin.lineno = p[1].lineno
     p[0] = bin
 
 def p_expression3(p):
     "expression : MINUS expression %prec NEGATION"
     un = Unary(UnaryOp.NEGATION, p[2])
-    un.lineno = p.lineno(2)
+    un.lineno = p.lineno(1)
     p[0] = un
 
 def p_expression4(p):
     "expression : EXCLAMATION expression"
     un = Unary(UnaryOp.NOT, p[2])
-    un.lineno = p.lineno(2)
+    un.lineno = p.lineno(1)
     p[0] = un
 
 def p_expression5(p):
     "expression : expression CIRCUMFLEX expression"
     bin = Binary(BinaryOp.EXP, p[1], p[3])
-    bin.lineno = p.lineno(1)
+    bin.lineno = p.lineno(2)
     p[0] = bin
 
 def p_expression6(p):
     "expression : expression STAR expression"
     bin = Binary(BinaryOp.MULT, p[1], p[3])
-    bin.lineno = p.lineno(1)
+    bin.lineno = p.lineno(2)
     p[0] = bin
 
 def p_expression7(p):
     "expression : expression SLASH expression"
     bin = Binary(BinaryOp.DIV, p[1], p[3])
-    bin.lineno = p.lineno(1)
+    bin.lineno = p.lineno(2)
     p[0] = bin
 
 def p_expression8(p):
     "expression : expression PERCENT expression"
     bin = Binary(BinaryOp.REM, p[1], p[3])
-    bin.lineno = p.lineno(1)
+    bin.lineno = p.lineno(2)
     p[0] = bin
 
 def p_expression9(p):
     "expression : expression PLUS expression"
     bin = Binary(BinaryOp.PLUS, p[1], p[3])
-    bin.lineno = p.lineno(1)
+    bin.lineno = p.lineno(2)
     p[0] = bin
 
 def p_expression10(p):
     "expression : expression MINUS expression"
     bin = Binary(BinaryOp.MINUS, p[1], p[3])
-    bin.lineno = p.lineno(1)
+    bin.lineno = p.lineno(2)
     p[0] = bin
 
 def p_expression11(p):
     "expression : expression LESS expression"
     bin = Binary(BinaryOp.LT, p[1], p[3])
-    bin.lineno = p.lineno(1)
+    bin.lineno = p.lineno(2)
     p[0] = bin
 
 def p_expression12(p):
     "expression : expression LESS_EQUALS expression"
     bin = Binary(BinaryOp.LTE, p[1], p[3])
-    bin.lineno = p.lineno(1)
+    bin.lineno = p.lineno(2)
     p[0] = bin
 
 def p_expression13(p):
     "expression : expression GREATER expression"
     bin = Binary(BinaryOp.GT, p[1], p[3])
-    bin.lineno = p.lineno(1)
+    bin.lineno = p.lineno(2)
     p[0] = bin
 
 def p_expression14(p):
     "expression : expression GREATER_EQUALS expression"
     bin = Binary(BinaryOp.GTE, p[1], p[3])
-    bin.lineno = p.lineno(1)
+    bin.lineno = p.lineno(2)
     p[0] = bin
 
 def p_expression15(p):
     "expression : expression EQUALS expression"
     bin = Binary(BinaryOp.EQ, p[1], p[3])
-    bin.lineno = p.lineno(1)
+    bin.lineno = p.lineno(2)
     p[0] = bin
 
 def p_expression16(p):
     "expression : expression EXCLAMATION_EQUALS expression"
     bin = Binary(BinaryOp.NEQ, p[1], p[3])
-    bin.lineno = p.lineno(1)
+    bin.lineno = p.lineno(2)
     p[0] = bin
 
 def p_expression17(p):
     "expression : expression AMPERSAND_AMPERSAND expression"
     bin = Binary(BinaryOp.AND, p[1], p[3])
-    bin.lineno = p.lineno(1)
+    bin.lineno = p.lineno(2)
     p[0] = bin
 
 def p_expression18(p):
     "expression : expression PIPE_PIPE expression"
     bin = Binary(BinaryOp.OR, p[1], p[3])
-    bin.lineno = p.lineno(1)
+    bin.lineno = p.lineno(2)
     p[0] = bin
 
 def p_expression19(p):
@@ -551,7 +551,9 @@ def p_expression26(p):
 
 def p_functionCall1(p):
     "functionCall : IDENT LPAREN RPAREN"
-    p[0] = FunctionCall(p[1], [])
+    funcCall = FunctionCall(p[1], [])
+    funcCall.lineno = p.lineno(1)
+    p[0] = funcCall
 
 def p_functionCall2(p):
     "functionCall : IDENT LPAREN functionCallArguments RPAREN"

@@ -62,7 +62,7 @@ def verify_(ctx: Context, node: Node):
             ctx.newScope()
             ctx.add(functionHeader.ident, functionHeader.retType, VarType.VAR)
             if ctx.getFuncDef(functionHeader.ident):
-                print(f"Function {functionHeader.ident} cannot be re-defined")
+                print(f"Function {functionHeader.ident} cannot be re-defined. On line {node.lineno}")
                 exit(3)
             ctx.addFuncDef(functionHeader)
             verify_(ctx, codeBlock)
