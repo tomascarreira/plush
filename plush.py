@@ -3,6 +3,7 @@ import sys
 from parser import parse, Declaration, Type, TypeEnum
 from typeChecker import verify, Context as TypeContext
 from interpreter import eval, Context as ValueContext
+from codegen import codegen
 from pretty_print import pp_ast
 
 if __name__ == "__main__":
@@ -11,9 +12,20 @@ if __name__ == "__main__":
         with open(sys.argv[1]) as file:
             input = file.read()
             ast = parse(input)
-            verify(TypeContext(), ast)
-            pp_ast(ast)
-            eval(ast, ValueContext())
+
+        print("=====AST=====")
+        verify(TypeContext(), ast)
+        pp_ast(ast)
+
+        print("=====Codegen=====")
+        emitter = codegen(ast)
+        print("\n".join(emitter.lines))
+        print("\n".join(emitter.decls))
+
+        outName = sys.argv[1].rsplit(".", 1)[0].rsplit("/", 1)[-1]+".ll"
+        with open(outName, "w") as out:
+            out.write("\n".join(emitter.lines))
+            out.write("\n".join(emitter.decls))
 
     else:
         while True:

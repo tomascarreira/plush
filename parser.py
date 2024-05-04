@@ -30,6 +30,22 @@ class TypeEnum(Enum):
 
         return res
 
+    def llvm(self):
+        match self:
+            case TypeEnum.INT:
+                res = "i32"
+            case TypeEnum.FLT:
+                res = "float"
+            case TypeEnum.STR:
+                res = "ptr"
+            case TypeEnum.CHA:
+                res = "i8"
+            case TypeEnum.BOOL:
+                res = "i1"
+            case TypeEnum.VOID:
+                res = "void"
+
+        return res
 
 @dataclass
 class Type:
@@ -47,6 +63,13 @@ class Type:
             return str(self.type)
         else:
             return "["*self.listDepth + str(self.type) + "]"*self.listDepth
+
+    def llvm(self):
+        if self.listDepth == 0:
+            return self.type.llvm()
+        else:
+            return "ptr"
+
 
 class VarType(Enum):
     VAR = 0
@@ -122,6 +145,40 @@ class BinaryOp(Enum):
                 res = "||"
             case BinaryOp.INDEXING:
                 res = "[]"
+
+        return res
+
+    def llvmInt(self):
+        match self:
+            case BinaryOp.LT:
+                res = "slt"
+            case BinaryOp.LTE:
+                res = "sle"
+            case BinaryOp.GT:
+                res = "sgt"
+            case BinaryOp.GTE:
+                res = "sge"
+            case BinaryOp.EQ:
+                res = "eq"
+            case BinaryOp.NEQ:
+                res = "neq"
+
+        return res
+
+    def llvmFloat(self):
+        match self:
+            case BinaryOp.LT:
+                res = "ult"
+            case BinaryOp.LTE:
+                res = "ule"
+            case BinaryOp.GT:
+                res = "ugt"
+            case BinaryOp.GTE:
+                res = "uge"
+            case BinaryOp.EQ:
+                res = "ueq"
+            case BinaryOp.NEQ:
+                res = "une"
 
         return res
 

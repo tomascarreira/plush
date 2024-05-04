@@ -13,7 +13,8 @@ def pp_ast(node, depth=0):
 
         case Declaration(ident, args, retType):
             print(f"Function Declaration {ident} {retType}")
-            print("\n".join(f"  Function Argument {arg[0]} {arg[1]} {arg[2]}" for arg in args))
+            if len(args) > 0:
+                print("\n".join(f"  Function Argument {arg[0]} {arg[1]} {arg[2]}" for arg in args))
 
         case GlobalVariableDefinition(varType, ident, type, rhs):
             print(f"GlobalVariable Definition {varType} {ident} {type}")
