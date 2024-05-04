@@ -403,7 +403,7 @@ def p_variableDefiniton(p):
     "variableDefinition : varType IDENT COLON type COLON_EQUALS expression SEMICOLON"
     varDef = VariableDefinition(p[1], p[2], p[4], p[6])
     varDef.lineno = p.lineno(2)
-    p[0] = VarDef
+    p[0] = varDef
 
 def p_variableAssignment(p):
     "variableAssingment : leftHandSide COLON_EQUALS expression SEMICOLON"
