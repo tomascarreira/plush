@@ -9,6 +9,4 @@ verificar o uso correcto do "return", quando uma função que deveria retornar a
 
 gramática permite declaraçõe e definições estarem misturadas mas no type checking, no interpretador e no codegen existe uma ordem definida, declarações primeiro, definições depois
 
-code genation
-
 criar mais e melhores testes

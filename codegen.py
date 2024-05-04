@@ -170,29 +170,29 @@ def codegen(node, emitter=None):
                     exit(4)
 
                 case BinaryOp.MULT:
-                    emitter << f"  %{res} = {"mul" if node.exprType.type == TypeEnum.INT else "fmul"} {node.exprType.llvm()}  {lReg}, {rReg}"
+                    emitter << f"  %{res} = {"mul" if node.exprType.type == TypeEnum.INT else "fmul"} {node.exprType.llvm()}  %{lReg}, %{rReg}"
 
                 case BinaryOp.DIV:
-                    emitter << f"  %{res} = {"sdiv" if node.exprType.type == TypeEnum.INT else "fdiv"} {node.exprType.llvm()}  {lReg}, {rReg}"
+                    emitter << f"  %{res} = {"sdiv" if node.exprType.type == TypeEnum.INT else "fdiv"} {node.exprType.llvm()}  %{lReg}, %{rReg}"
 
                 case BinaryOp.REM:
-                    emitter << f"  %{res} = {"srem" if node.exprType.type == TypeEnum.INT else "frem"} {node.exprType.llvm()}  {lReg}, {rReg}"
+                    emitter << f"  %{res} = {"srem" if node.exprType.type == TypeEnum.INT else "frem"} {node.exprType.llvm()}  %{lReg}, %{rReg}"
 
                 case BinaryOp.PLUS:
-                    emitter << f"  %{res} = {"add" if node.exprType.type == TypeEnum.INT else "fadd"} {node.exprType.llvm()}  {lReg}, {rReg}"
+                    emitter << f"  %{res} = {"add" if node.exprType.type == TypeEnum.INT else "fadd"} {node.exprType.llvm()}  %{lReg}, %{rReg}"
 
                 case BinaryOp.MINUS:
-                    emitter << f"  %{res} = {"sub" if node.exprType.type == TypeEnum.INT else "fsub"} {node.exprType.llvm()}  {lReg}, {rReg}"
+                    emitter << f"  %{res} = {"sub" if node.exprType.type == TypeEnum.INT else "fsub"} {node.exprType.llvm()}  %{lReg}, %{rReg}"
 
 
                 case BinaryOp.LT | BinaryOp.LTE | BinaryOp.GT | BinaryOp.GTE | BinaryOp.EQ | BinaryOp.NEQ:
-                    emitter << f"  %{res} = {"icmp" if left.exprType.type == TypeEnum.INT else "fcmp"} {op.llvmInt() if left.exprType.type == TypeEnum.INT else op.llvmFloat()} {left.exprType.llvm()} {lReg}, {rReg}"
+                    emitter << f"  %{res} = {"icmp" if left.exprType.type == TypeEnum.INT else "fcmp"} {op.llvmInt() if left.exprType.type == TypeEnum.INT else op.llvmFloat()} {left.exprType.llvm()} %{lReg}, %{rReg}"
 
                 case BinaryOp.AND:
-                    emitter << f"  %{res} = {node.exprType.llvm()} and {lReg}, {rReg}"
+                    emitter << f"  %{res} = {node.exprType.llvm()} and %{lReg}, %{rReg}"
 
                 case BinaryOp.OR:
-                    emitter << f"  %{res} = {node.exprType.llvm()} or {lReg}, {rReg}"
+                    emitter << f"  %{res} = {node.exprType.llvm()} or %{lReg}, %{rReg}"
 
                 case BinaryOp.INDEXING:
                     print("Por enquanto não suporta indexing")
@@ -208,7 +208,7 @@ def codegen(node, emitter=None):
 
             match op:
                 case UnaryOp.NEGATION:
-                    emitter << f"  %{res} = {node.exprType.llvm()} {"sub" if node.exprType.type == TypeEnum.INT else "fsub"} 0, {reg}"
+                    emitter << f"  %{res} = {node.exprType.llvm()} {"sub" if node.exprType.type == TypeEnum.INT else "fsub"} 0, %{reg}"
 
                 case UnaryOp.NOT:
                     emitter << f"  %{res} = xor %{reg}, true"
