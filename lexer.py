@@ -7,8 +7,6 @@ reserved = {
 	"if": "IF",
 	"else": "ELSE",
 	"while": "WHILE",
-	"true": "TRUE",
-	"false": "FALSE",
 	"int": "INT",
 	"float": "FLOAT",
 	"char": "CHAR",
@@ -21,6 +19,7 @@ tokens = [
 	"STR_LITERAL",
 	"INT_LITERAL",
 	"FLT_LITERAL",
+	"BOOL_LITERAL",
 	"CHR_LITERAL",
 	"IDENT",
 	"LPAREN",
@@ -84,6 +83,11 @@ def t_FLT_LITERAL(t):
 def t_INT_LITERAL(t):
 	r"\d+"
 	t.value = int(t.value)
+	return t
+
+def t_BOOL_LITERAL(t):
+	r"true | false"
+	t.value = True if t.value == "true" else False 
 	return t
 
 def t_STR_LITERAL(t):

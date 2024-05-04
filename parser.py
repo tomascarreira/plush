@@ -518,12 +518,12 @@ def p_expression18(p):
     p[0] = bin
 
 def p_expression19(p):
-    "expression : TRUE"
+    "expression : BOOL_LITERAL"
     p[0] = Literal(p[1], Type(TypeEnum.BOOL))
 
-def p_expression20(p):
-    "expression : FALSE"
-    p[0] = Literal(p[1], Type(TypeEnum.BOOL))
+# def p_expression20(p):
+#     "expression : FALSE"
+#     p[0] = Literal(p[1], Type(TypeEnum.BOOL))
     
 def p_expression21(p):
     "expression : INT_LITERAL"

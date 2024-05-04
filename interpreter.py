@@ -141,6 +141,8 @@ def eval(node, ctx: Context):
                 case BinaryOp.INDEXING:
                     res = l[r]
 
+            print(op, l, r, res)
+
             return res
 
         case Unary(op, expression):
