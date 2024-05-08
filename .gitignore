@@ -5,3 +5,4 @@ parsetab.py
 *.s
 *.o
 bin
+a.out
