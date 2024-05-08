@@ -1,3 +1,2 @@
-function main(): int {
-  main := 0;
+function main() {
 }

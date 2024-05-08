@@ -1,2 +1,7 @@
-function main(): int {
+function main() {
+  f();
+}
+
+function f() {
+  
 }

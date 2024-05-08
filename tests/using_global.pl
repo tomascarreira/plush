@@ -2,7 +2,6 @@ function print_int(val n: int);
 
 val a: int := 1;
 
-function main():int {
+function main() {
   print_int(a);
-  main := 0;
 }

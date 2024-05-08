@@ -60,6 +60,10 @@ def codegen(node, emitter=None):
             args = functionHeader.args
             retType = functionHeader.retType
 
+            # Permitir não escrever que a função main devolve um int e main := 0
+            if ident == "main":
+                retType = Type(TypeEnum.INT)
+
             emitter << f"define {retType.llvm()} @{ident}("\
                 + "".join(f"{argType.llvm()} %{argIdent}" for (_, argIdent, argType) in args)\
                 + ") {"
