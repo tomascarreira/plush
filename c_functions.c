@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -11,4 +12,8 @@ void print_bool(bool b) {
 
 void print_str(char* s) {
   printf("%s\n", s);
+}
+
+int* int_array(int size) {
+  return malloc(size * sizeof(int));
 }

@@ -9,6 +9,7 @@ class Emitter:
         self.counter = 0
         self.literal = 0
         self.branch = 0
+        self.arrayIdx = 0
 
     def __lshift__(self, line):
         self.lines.append(line)
@@ -32,10 +33,16 @@ class Emitter:
     def reset(self):
         self.counter = 0
         self.literal = 0
+        self.arrayIdx = 0
 
     def nextBranch(self):
         res = self.branch
         self.branch += 1
+        return res
+
+    def nextArrayIdx(self):
+        res = self.arrayIdx
+        self.arrayIdx += 1
         return res
 
 
@@ -91,9 +98,16 @@ def codegen(node, emitter=None):
             [codegen(stmt, emitter) for stmt in statements[::-1]]
 
         case Assignment(ident, indexing, rhs):
-            # TODO: Handle indexing
             reg = codegen(rhs, emitter)
-            emitter << f"  store {rhs.exprType.llvm()}  {reg}, ptr %{ident}.addr"
+            if indexing:
+                idx = codegen(indexing, emitter)
+                arrIdx = emitter.nextArrayIdx()
+                regArr = emitter.next()
+                emitter << f"  %{regArr} = load ptr, ptr %{ident}.addr"
+                emitter << f"  %arrayidx{arrIdx} = getelementptr {rhs.exprType.llvm()}, ptr %{regArr}, i64 {idx}"
+                emitter << f"  store {rhs.exprType.llvm()} {reg}, ptr %arrayidx{arrIdx}"
+            else:
+                emitter << f"  store {rhs.exprType.llvm()}  {reg}, ptr %{ident}.addr"
 
         case While(guard, codeBlock):
 
@@ -145,7 +159,7 @@ def codegen(node, emitter=None):
                 ret = None
             else:
                 ret = emitter.next()
-                emitter << f"  %{ret} = call {node.exprType.llvm()} @{ident} ({llvmArgs})"
+                emitter << f"  %{ret} = call {node.exprType.llvm()} @{ident}({llvmArgs})"
 
             return f"%{ret}"
 
@@ -187,8 +201,9 @@ def codegen(node, emitter=None):
                     emitter << f"  %{res} = {node.exprType.llvm()} or {lReg}, {rReg}"
 
                 case BinaryOp.INDEXING:
-                    print("Por enquanto não suporta indexing")
-                    exit(4)
+                    arrIdx = emitter.nextArrayIdx()
+                    emitter << f"  %arrayidx{arrIdx} = getelementptr {node.exprType.llvm()}, ptr {lReg}, i64 {rReg}"                    
+                    emitter << f"  %{res} = load {node.exprType.llvm()}, ptr %arrayidx{arrIdx}"
 
             return f"%{res}"
                 
