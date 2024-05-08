@@ -43,23 +43,19 @@ def codegen(node, emitter=None):
     match node:
         case Program(decs, defs):
             emitter = Emitter()
-            emitter << "; Program"
             [codegen(dec, emitter) for dec in decs[::-1]]
             [codegen(def_, emitter) for def_ in defs[::-1]]
             return emitter
 
         case Declaration(ident, args, retType):
-            emitter.addDec("; Declaration")
             emitter.addDec(f"declare {retType.llvm()} @{ident}("\
                 + "".join(f"{argType.llvm()} %{argIdent}" for (_, argIdent, argType) in args)\
                 + ")")
 
         case GlobalVariableDefinition(varType, ident, type, rhs):
-            emitter.addTop("; GlobalVariableDefinition")
-            emitter.addTop(f"@{ident} = {type} {eval(rhs, ValueContext())}")
+            emitter.addTop(f"@{ident} = global {type.llvm()} {eval(rhs, ValueContext())}")
 
         case FunctionDefinition(functionHeader, codeBlock):
-            emitter << "; FunctioDefinition top"
             ident = functionHeader.ident
             args = functionHeader.args
             retType = functionHeader.retType
@@ -77,7 +73,6 @@ def codegen(node, emitter=None):
 
             codegen(codeBlock, emitter)
 
-            emitter << "; FunctioDefinition bottom"
             if retType.type == TypeEnum.VOID:
                 emitter << f"  ret void"
             else:
@@ -89,17 +84,14 @@ def codegen(node, emitter=None):
             emitter.reset()
 
         case CodeBlock(statements):
-            emitter << "; CodeBlock"
             [codegen(stmt, emitter) for stmt in statements[::-1]]
 
         case Assignment(ident, indexing, rhs):
-            emitter << "; Assignment"
             # TODO: Handle indexing
             reg = codegen(rhs, emitter)
-            emitter << f"  store {rhs.exprType.llvm()}  %{reg}, ptr %{ident}.addr"
+            emitter << f"  store {rhs.exprType.llvm()}  {reg}, ptr %{ident}.addr"
 
         case While(guard, codeBlock):
-            emitter << "; While"
 
             guardLabel = emitter.nextBranch()
             bodyLabel = emitter.nextBranch()
@@ -118,7 +110,6 @@ def codegen(node, emitter=None):
             emitter << f"while.end{endLabel}:"
 
         case If(condition, thenBlock, elseBlock):
-            emitter << "; If"
 
             thenLabel = emitter.nextBranch()
             elseLabel = emitter.nextBranch()
@@ -139,14 +130,12 @@ def codegen(node, emitter=None):
 
 
         case VariableDefinition(varType, ident, type, rhs):
-            emitter << "; VariableDefinition"
             reg = codegen(rhs, emitter)
             emitter << f"  %{ident}.addr = alloca {type.llvm()}"
-            emitter << f"  store {type.llvm()} %{reg}, ptr %{ident}.addr"
+            emitter << f"  store {type.llvm()} {reg}, ptr %{ident}.addr"
 
         case FunctionCall(ident, args):
-            emitter << "; FunctionCall"
-            llvmArgs = ",".join(f"{arg.exprType.llvm()} %{codegen(arg, emitter)}" for arg in args)
+            llvmArgs = ",".join(f"{arg.exprType.llvm()} {codegen(arg, emitter)}" for arg in args)
             if node.exprType.type == TypeEnum.VOID:
                 emitter << f"  call {node.exprType.llvm()} @{ident} ({llvmArgs})"
                 ret = None
@@ -154,10 +143,9 @@ def codegen(node, emitter=None):
                 ret = emitter.next()
                 emitter << f"  %{ret} = call {node.exprType.llvm()} @{ident} ({llvmArgs})"
 
-            return ret
+            return f"%{ret}"
 
         case Binary(op, left, right):
-            emitter << f"; Binary {op}"
 
             lReg = codegen(left, emitter)
             rReg = codegen(right, emitter)
@@ -170,71 +158,70 @@ def codegen(node, emitter=None):
                     exit(4)
 
                 case BinaryOp.MULT:
-                    emitter << f"  %{res} = {"mul" if node.exprType.type == TypeEnum.INT else "fmul"} {node.exprType.llvm()}  %{lReg}, %{rReg}"
+                    emitter << f"  %{res} = {'mul' if node.exprType.type == TypeEnum.INT else 'fmul'} {node.exprType.llvm()}  {lReg}, {rReg}"
 
                 case BinaryOp.DIV:
-                    emitter << f"  %{res} = {"sdiv" if node.exprType.type == TypeEnum.INT else "fdiv"} {node.exprType.llvm()}  %{lReg}, %{rReg}"
+                    emitter << f"  %{res} = {'sdiv' if node.exprType.type == TypeEnum.INT else 'fdiv'} {node.exprType.llvm()}  {lReg}, {rReg}"
 
                 case BinaryOp.REM:
-                    emitter << f"  %{res} = {"srem" if node.exprType.type == TypeEnum.INT else "frem"} {node.exprType.llvm()}  %{lReg}, %{rReg}"
+                    emitter << f"  %{res} = {'srem' if node.exprType.type == TypeEnum.INT else 'frem'} {node.exprType.llvm()}  {lReg}, {rReg}"
 
                 case BinaryOp.PLUS:
-                    emitter << f"  %{res} = {"add" if node.exprType.type == TypeEnum.INT else "fadd"} {node.exprType.llvm()}  %{lReg}, %{rReg}"
+                    emitter << f"  %{res} = {'add' if node.exprType.type == TypeEnum.INT else 'fadd'} {node.exprType.llvm()}  {lReg}, {rReg}"
 
                 case BinaryOp.MINUS:
-                    emitter << f"  %{res} = {"sub" if node.exprType.type == TypeEnum.INT else "fsub"} {node.exprType.llvm()}  %{lReg}, %{rReg}"
+                    emitter << f"  %{res} = {'sub' if node.exprType.type == TypeEnum.INT else 'fsub'} {node.exprType.llvm()}  {lReg}, {rReg}"
 
 
                 case BinaryOp.LT | BinaryOp.LTE | BinaryOp.GT | BinaryOp.GTE | BinaryOp.EQ | BinaryOp.NEQ:
-                    emitter << f"  %{res} = {"icmp" if left.exprType.type == TypeEnum.INT else "fcmp"} {op.llvmInt() if left.exprType.type == TypeEnum.INT else op.llvmFloat()} {left.exprType.llvm()} %{lReg}, %{rReg}"
+                    emitter << f"  %{res} = {'icmp' if left.exprType.type == TypeEnum.INT else 'fcmp'} {op.llvmInt() if left.exprType.type == TypeEnum.INT else op.llvmFloat()} {left.exprType.llvm()} {lReg}, {rReg}"
 
                 case BinaryOp.AND:
-                    emitter << f"  %{res} = {node.exprType.llvm()} and %{lReg}, %{rReg}"
+                    emitter << f"  %{res} = {node.exprType.llvm()} and {lReg}, {rReg}"
 
                 case BinaryOp.OR:
-                    emitter << f"  %{res} = {node.exprType.llvm()} or %{lReg}, %{rReg}"
+                    emitter << f"  %{res} = {node.exprType.llvm()} or {lReg}, {rReg}"
 
                 case BinaryOp.INDEXING:
                     print("Por enquanto não suporta indexing")
                     exit(4)
 
-            return res
+            return f"%{res}"
                 
 
         case Unary(op, expression):
-            emitter << f"; Unary {op}"
 
             reg = codegen(expression, emitter)
 
             match op:
                 case UnaryOp.NEGATION:
-                    emitter << f"  %{res} = {node.exprType.llvm()} {"sub" if node.exprType.type == TypeEnum.INT else "fsub"} 0, %{reg}"
+                    emitter << f"  {res} = {node.exprType.llvm()} {'sub' if node.exprType.type == TypeEnum.INT else 'fsub'} 0, {reg}"
 
                 case UnaryOp.NOT:
-                    emitter << f"  %{res} = xor %{reg}, true"
+                    emitter << f"  {res} = xor {reg}, true"
 
-            return res
+            return f"%{reg}"
 
         case Ident(ident):
-            emitter << "; Ident"
-
             reg = emitter.next()
-            emitter << f"  %{reg} = load {node.exprType.llvm()}, ptr %{ident}.addr"
+            if node.glob:
+                emitter << f"  %{reg} = load {node.exprType.llvm()}, ptr @{ident}"
+            else:
+                emitter << f"  %{reg} = load {node.exprType.llvm()}, ptr %{ident}.addr"
 
-            return reg
+            return f"%{reg}"
 
         case Literal(val, type):
-            emitter << "; Literal"
 
-            reg = emitter.next()
             match type.type:
                 case TypeEnum.INT:
                     pass
                 case TypeEnum.FLT:
                     pass
                 case TypeEnum.STR:
-                    print("String code gen not implemented yet")
-                    exit(4)
+                    lit = emitter.nextLiteral()
+                    emitter.addTop(f"@str.{lit} = constant [{len(val)+1} x i8] c\"{val}\\00\"")
+                    val = f"@str.{lit}"
                 case TypeEnum.CHA:
                     val = ord(c)
                 case TypeEnum.BOOL:
@@ -242,12 +229,6 @@ def codegen(node, emitter=None):
                 case _:
                     exit(5)
 
-            lit = emitter.nextLiteral()
-
-            emitter << f"  %literal{lit} = alloca {type.llvm()}"
-            emitter << f"  store {type.llvm()} {val}, ptr %literal{lit}"
-            emitter << f"  %{reg} = load {type.llvm()}, ptr %literal{lit}"
-
-            return reg
+            return val
         
 

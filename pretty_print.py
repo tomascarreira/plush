@@ -70,7 +70,7 @@ def pp_ast(node, depth=0):
             pp_ast(expression, depth+1)
 
         case Ident(ident):
-            print(f"Ident {ident}", f"{node.exprType}" if node.exprType else "")
+            print(f"Ident {ident}", f"global" if node.glob else "", f"{node.exprType}" if node.exprType else "")
 
         case Literal(val, type):
             print(f"Literal {val} {type}", f"{node.exprType}" if node.exprType else "")

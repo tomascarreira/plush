@@ -32,6 +32,11 @@ class Context:
 
         return None
 
+    def isGlobalVar(self, ident):
+        for i, scope in enumerate(self.stack[::-1]):
+            if ident in scope:
+                return len(self.stack) - i == 1
+
     def addFuncDef(self, functionHeader):
         self.funcDefs[functionHeader.ident] = functionHeader
 
@@ -41,7 +46,7 @@ class Context:
     def noFuncDefs(self):
         return len(self.funcDefs) == 0
 
-# Verifies if my interpreter can calculate the value for the llvm ir codegen
+# Verifies if my interpreter can calculate the value for the llvm ir codegen of global variables
 def checkCompileTimeConst(expr: Expression) -> bool:
     match expr:
         case FunctionCall(ident, args):
@@ -59,50 +64,66 @@ def checkCompileTimeConst(expr: Expression) -> bool:
         case Literal(val, type):
             return True
 
-def verify_(ctx: Context, node: Node):
+def first_pass(ctx: Context, node: Node):
     match node:
         case Program(decs, defs):
-            [verify_(ctx, decl) for decl in decs[::-1]]
-            [verify_(ctx, defi) for defi in defs[::-1]]
+            [first_pass(ctx, decl) for decl in decs[::-1]]
+            [first_pass(ctx, defi) for defi in defs[::-1]]
 
         case Declaration(ident, args, retType):
-            [ctx.addFuncDef(node)]
+            ctx.addFuncDef(node)
+
+        case GlobalVariableDefinition(varType, ident, type, rhs):
+            ctx.add(ident, type, varType)
+
+        case FunctionDefinition(functionHeader, codeBlock):
+            if ctx.getFuncDef(functionHeader.ident):
+                print(f"Function {functionHeader.ident} cannot be re-defined. On line {node.lineno}")
+                exit(3)
+            ctx.addFuncDef(functionHeader)
+
+        case _:
+            return
+
+def second_pass(ctx: Context, node: Node):
+    match node:
+        case Program(decs, defs):
+            [second_pass(ctx, decl) for decl in decs[::-1]]
+            [second_pass(ctx, defi) for defi in defs[::-1]]
+
+        case Declaration(ident, args, retType):
+            pass
 
         case GlobalVariableDefinition(varType, ident, type, rhs):
             if not checkCompileTimeConst(rhs):
                 print(f"Global variable must be compile-time constant. On line {node.lineno}")
                 exit(3)
-            rhsType = verify_(ctx, rhs)
+            rhsType = second_pass(ctx, rhs)
             if type != rhsType:
                 print(f"Righ hand side expression is type {rhsType} but its declare to have type {type}. On line {node.lineno}")
                 exit(3)
-            ctx.add(ident, type, varType)
 
         case FunctionDefinition(functionHeader, codeBlock):
-            [ctx.add(ident, type, varType)  for (varType, ident, type) in functionHeader.args]
             ctx.newScope()
+            [ctx.add(ident, type, varType)  for (varType, ident, type) in functionHeader.args]
             ctx.add(functionHeader.ident, functionHeader.retType, VarType.VAR)
-            if ctx.getFuncDef(functionHeader.ident):
-                print(f"Function {functionHeader.ident} cannot be re-defined. On line {node.lineno}")
-                exit(3)
-            ctx.addFuncDef(functionHeader)
-            verify_(ctx, codeBlock)
+            second_pass(ctx, codeBlock)
             ctx.popScope()
 
         case CodeBlock(statements):
             ctx.newScope()
-            [verify_(ctx, stm) for stm in statements[::-1]]
+            [second_pass(ctx, stm) for stm in statements[::-1]]
             ctx.popScope()
 
         case VariableDefinition(varType, ident, type, rhs):
-            rhsType = verify_(ctx, rhs)
+            rhsType = second_pass(ctx, rhs)
             if type != rhsType:
                 print(f"Righ hand side expression is type {rhsType} but its declare to have type {type}. On line {node.lineno}")
                 exit(3)
             ctx.add(ident, type, varType)
 
         case Assignment(ident, indexing, rhs):
-            type = verify_(ctx, rhs) 
+            type = second_pass(ctx, rhs) 
             # TODO: handle when there is no return type
             ctxVarType = ctx.getVarType(ident)
             if ctxVarType == VarType.VAL:
@@ -121,19 +142,19 @@ def verify_(ctx: Context, node: Node):
                 exit(3)
 
         case While(guard, codeBlock):
-            guardType = verify_(ctx, guard)
+            guardType = second_pass(ctx, guard)
             if guardType != Type(TypeEnum.BOOL):
                 print(f"Type of guard in while statement must be bool, got type {guardType}. On line {node.lineno}")
                 exit(3)
-            verify_(ctx, codeBlock)
+            second_pass(ctx, codeBlock)
 
         case If(condition, thenBlock, elseBlock):
-            conditionType = verify_(ctx, condition)
+            conditionType = second_pass(ctx, condition)
             if conditionType != Type(TypeEnum.BOOL):
                 print(f"Type of condition in if statement must be bool, got type {conditionType}. On line {node.lineno}")
                 exit(3)
-            verify_(ctx, thenBlock)
-            verify_(ctx, elseBlock)
+            second_pass(ctx, thenBlock)
+            second_pass(ctx, elseBlock)
 
         case FunctionCall(ident, args):
             funcDef = ctx.getFuncDef(ident)
@@ -144,7 +165,7 @@ def verify_(ctx: Context, node: Node):
                 print(f"In function call expected {len(funcDef.args)} arguments, got {len(args)}. On line {node.lineno}")
                 exit(3)
             for call, (_, argIdent, defiType) in zip(args, funcDef.args):
-                argType = verify_(ctx, call)
+                argType = second_pass(ctx, call)
                 if defiType != argType:
                     print(f"Expected {argIdent} argument to have type {defiType} got type {argType}. On line {node.lineno}")
                     exit(3)
@@ -154,8 +175,8 @@ def verify_(ctx: Context, node: Node):
             return funcDef.retType
 
         case Binary(op, left, right):
-            lType = verify_(ctx, left)
-            rType = verify_(ctx, right)
+            lType = second_pass(ctx, left)
+            rType = second_pass(ctx, right)
 
             if op == BinaryOp.INDEXING:
                 if rType != Type(TypeEnum.INT):
@@ -198,7 +219,7 @@ def verify_(ctx: Context, node: Node):
             return exprType
 
         case Unary(op, expression):
-            type = verify_(ctx, expression)
+            type = second_pass(ctx, expression)
             if op == UnaryOp.NEGATION:
                 if type in [Type(TypeEnum.INT), Type(TypeEnum.FLT)]:
                     node.exprType = type
@@ -220,6 +241,8 @@ def verify_(ctx: Context, node: Node):
                 print(f"Variable {ident} not defined. On line {node.lineno}")
                 exit(3)
 
+            node.glob = ctx.isGlobalVar(ident)
+
             node.exprType = idType
 
             return idType
@@ -229,7 +252,8 @@ def verify_(ctx: Context, node: Node):
             return type
 
 def verify(ctx: Context, node: Node):
-    verify_(ctx, node)
+    first_pass(ctx, node)
+    second_pass(ctx, node)
 
     # We check if noFuncDefs so plus in interpreter mode doesnt crash, but this moght accept an incorrect
     # program, a program with no function definitions

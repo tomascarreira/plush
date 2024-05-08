@@ -215,6 +215,7 @@ class Literal(Expression):
 @dataclass
 class Ident(Expression):
     ident: str
+    glob: bool
 
 @dataclass
 class CodeBlock(Node):
@@ -612,7 +613,7 @@ def p_expression24(p):
 
 def p_expression25(p):
     "expression : IDENT"
-    p[0] = Ident(p[1])
+    p[0] = Ident(p[1], False)
 
 def p_expression26(p):
     "expression : functionCall %prec FUNCTION_CALL"
