@@ -56,7 +56,7 @@ def codegen(node, emitter=None):
 
         case Declaration(ident, args, retType):
             emitter.addDec(f"declare {retType.llvm()} @{ident}("\
-                + "".join(f"{argType.llvm()} %{argIdent}" for (_, argIdent, argType) in args)\
+                + ", ".join(f"{argType.llvm()} %{argIdent}" for (_, argIdent, argType) in args[::-1])\
                 + ")")
 
         case GlobalVariableDefinition(varType, ident, type, rhs):
@@ -64,7 +64,7 @@ def codegen(node, emitter=None):
 
         case FunctionDefinition(functionHeader, codeBlock):
             ident = functionHeader.ident
-            args = functionHeader.args
+            args = functionHeader.args[::-1]
             retType = functionHeader.retType
 
             # Permitir não escrever que a função main devolve um int e main := 0
@@ -72,12 +72,17 @@ def codegen(node, emitter=None):
                 retType = Type(TypeEnum.INT)
 
             emitter << f"define {retType.llvm()} @{ident}("\
-                + "".join(f"{argType.llvm()} %{argIdent}" for (_, argIdent, argType) in args)\
+                + ", ".join(f"{argType.llvm()} %{argIdent}" for (_, argIdent, argType) in args)\
                 + ") {"
+
             emitter << "entry:"
             if retType.type != TypeEnum.VOID:
                 emitter << f"  %{ident}.addr = alloca {retType.llvm()}"
-                emitter << f"  store {retType.llvm()} 0, ptr %{ident}.addr"
+                # TODO: handle default return type for string and list
+                if retType.listDepth > 0 or retType.type == TypeEnum.STR:
+                    pass
+                else:
+                    emitter << f"  store {retType.llvm()} 0, ptr %{ident}.addr"
             for (_, argIdent, argType) in args:
                 emitter << f"  %{argIdent}.addr = alloca {argType.llvm()}"
                 emitter << f"  store {argType.llvm()} %{argIdent}, ptr %{argIdent}.addr"
@@ -104,7 +109,8 @@ def codegen(node, emitter=None):
                 arrIdx = emitter.nextArrayIdx()
                 regArr = emitter.next()
                 emitter << f"  %{regArr} = load ptr, ptr %{ident}.addr"
-                emitter << f"  %arrayidx{arrIdx} = getelementptr {rhs.exprType.llvm()}, ptr %{regArr}, i64 {idx}"
+                # array pointers are i32 because i dont want to cast them when the indexing comes from an expression
+                emitter << f"  %arrayidx{arrIdx} = getelementptr {rhs.exprType.llvm()}, ptr %{regArr}, i32 {idx}"
                 emitter << f"  store {rhs.exprType.llvm()} {reg}, ptr %arrayidx{arrIdx}"
             else:
                 emitter << f"  store {rhs.exprType.llvm()}  {reg}, ptr %{ident}.addr"
@@ -119,7 +125,7 @@ def codegen(node, emitter=None):
 
             emitter << f"while.guard{guardLabel}:"
             guardReg = codegen(guard, emitter)
-            emitter << f"  br i1 %{guardReg}, label %while.body{bodyLabel}, label %while.end{endLabel}"
+            emitter << f"  br i1 {guardReg}, label %while.body{bodyLabel}, label %while.end{endLabel}"
 
             emitter << f"while.body{bodyLabel}:"
             codegen(codeBlock, emitter)
@@ -134,7 +140,7 @@ def codegen(node, emitter=None):
             endLabel = emitter.nextBranch()
 
             conditionReg = codegen(condition, emitter)
-            emitter << f"  br i1 %{conditionReg}, label %if.then{thenLabel}, label %if.else{elseLabel}"
+            emitter << f"  br i1 {conditionReg}, label %if.then{thenLabel}, label %if.else{elseLabel}"
 
             emitter << f"if.then{thenLabel}:"
             codegen(thenBlock, emitter)
@@ -153,7 +159,7 @@ def codegen(node, emitter=None):
             emitter << f"  store {type.llvm()} {reg}, ptr %{ident}.addr"
 
         case FunctionCall(ident, args):
-            llvmArgs = ",".join(f"{arg.exprType.llvm()} {codegen(arg, emitter)}" for arg in args)
+            llvmArgs = ",".join(f"{arg.exprType.llvm()} {codegen(arg, emitter)}" for arg in args[::-1])
             if node.exprType.type == TypeEnum.VOID:
                 emitter << f"  call {node.exprType.llvm()} @{ident} ({llvmArgs})"
                 ret = None
@@ -195,14 +201,15 @@ def codegen(node, emitter=None):
                     emitter << f"  %{res} = {'icmp' if left.exprType.type == TypeEnum.INT else 'fcmp'} {op.llvmInt() if left.exprType.type == TypeEnum.INT else op.llvmFloat()} {left.exprType.llvm()} {lReg}, {rReg}"
 
                 case BinaryOp.AND:
-                    emitter << f"  %{res} = {node.exprType.llvm()} and {lReg}, {rReg}"
+                    emitter << f"  %{res} = and {node.exprType.llvm()} {lReg}, {rReg}"
 
                 case BinaryOp.OR:
-                    emitter << f"  %{res} = {node.exprType.llvm()} or {lReg}, {rReg}"
+                    emitter << f"  %{res} = or {node.exprType.llvm()} {lReg}, {rReg}"
 
                 case BinaryOp.INDEXING:
                     arrIdx = emitter.nextArrayIdx()
-                    emitter << f"  %arrayidx{arrIdx} = getelementptr {node.exprType.llvm()}, ptr {lReg}, i64 {rReg}"                    
+                    # array pointers are i32 because i dont want to cast them when the indexing comes from an expression
+                    emitter << f"  %arrayidx{arrIdx} = getelementptr {node.exprType.llvm()}, ptr {lReg}, i32 {rReg}"                    
                     emitter << f"  %{res} = load {node.exprType.llvm()}, ptr %arrayidx{arrIdx}"
 
             return f"%{res}"

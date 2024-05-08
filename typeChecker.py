@@ -136,6 +136,8 @@ def second_pass(ctx: Context, node: Node):
                 exit(3)
             if indexing:
                 ctxType = Type(ctxType.type, ctxType.listDepth - 1)
+                if not second_pass(ctx, indexing) == Type(TypeEnum.INT):
+                    print(f"Indexing expression must be of type int. On line {node.lineno}")
 
             if type != ctxType:
                 print(f"Cannot assign {type} to a variable with type {ctxType}. On line {node.lineno}")
