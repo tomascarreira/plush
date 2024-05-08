@@ -34,7 +34,7 @@ if __name__ == "__main__":
             typeCtx = TypeContext()
             typeCtx.addFuncDef(Declaration("print_int", [("val", "n", Type(TypeEnum.INT))], Type(TypeEnum.VOID)))
             typeCtx.addFuncDef(Declaration("print_bool", [("val", "n", Type(TypeEnum.BOOL))], Type(TypeEnum.VOID)))
-            typeCtx.addFuncDef(Declaration("print_int_array", [("val", "n", Type(TypeEnum.INT, 1))], Type(TypeEnum.VOID)))
+            typeCtx.addFuncDef(Declaration("print_int_array", [("val", "arr", Type(TypeEnum.INT, 1)), ("val", "size", Type(TypeEnum.INT))], Type(TypeEnum.VOID)))
             typeCtx.addFuncDef(Declaration("int_array", [("val", "size", Type(TypeEnum.INT))], Type(TypeEnum.INT, 1)))
             typeCtx.addFuncDef(Declaration("int_array_array", [("val", "size", Type(TypeEnum.INT))], Type(TypeEnum.INT, 2)))
             verify(typeCtx, ast)

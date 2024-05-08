@@ -14,6 +14,21 @@ void print_str(char* s) {
   printf("%s\n", s);
 }
 
+void print_int_array(int* arr, int size) {
+  printf("[");
+  for (size_t i = 0; i < size; ++i) {
+    printf("%d", arr[i]);
+    if (i < size - 1) {
+      printf(", ");
+    }
+  }
+  printf("]\n");
+}
+
 int* int_array(int size) {
   return malloc(size * sizeof(int));
+}
+
+int** int_array_array(int size) {
+  return malloc(size * sizeof(int*));
 }
