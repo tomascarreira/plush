@@ -6,6 +6,10 @@ void print_int(int n) {
   printf("%d\n", n);
 }
 
+void print_float(float flt) {
+  printf("%f\n", flt);
+}
+
 void print_bool(bool b) {
   printf("%s\n", b ? "true" : "false");
 }
