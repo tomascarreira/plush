@@ -97,26 +97,23 @@ class UnaryOp(Enum):
         return res
 
 class BinaryOp(Enum):
-    EXP = 0
-    MULT = 1
-    DIV = 2
-    REM = 3
-    PLUS = 4
-    MINUS = 5
-    LT = 6
-    LTE = 7
-    GT = 8
-    GTE = 9
-    EQ = 10
-    NEQ = 11
-    AND = 12
-    OR = 13
-    INDEXING = 14
+    MULT = 0
+    DIV = 1
+    REM = 2
+    PLUS = 3
+    MINUS = 4
+    LT = 5
+    LTE = 6
+    GT = 7
+    GTE = 8
+    EQ = 9
+    NEQ = 10
+    AND = 11
+    OR = 12
+    INDEXING = 13
 
     def __str__(self):
         match self:
-            case BinaryOp.EXP:
-                res = "^"
             case BinaryOp.MULT:
                 res = "*"
             case BinaryOp.DIV:
@@ -279,7 +276,6 @@ precedence = (
     ("nonassoc", "LPAREN", "RPAREN"),
     ("nonassoc", "LSQUARE", "RSQUARE"),
     ("right", "NEGATION", "EXCLAMATION"),
-    ("left", "CIRCUMFLEX"),
     ("left", "STAR", "SLASH", "PERCENT"),
     ("left", "PLUS", "MINUS"),
     ("nonassoc", "LESS", "LESS_EQUALS", "GREATER", "GREATER_EQUALS"),
@@ -504,118 +500,108 @@ def p_expression4(p):
     p[0] = un
 
 def p_expression5(p):
-    "expression : expression CIRCUMFLEX expression"
-    bin = Binary(BinaryOp.EXP, p[1], p[3])
-    bin.lineno = p.lineno(2)
-    p[0] = bin
-
-def p_expression6(p):
     "expression : expression STAR expression"
     bin = Binary(BinaryOp.MULT, p[1], p[3])
     bin.lineno = p.lineno(2)
     p[0] = bin
 
-def p_expression7(p):
+def p_expression6(p):
     "expression : expression SLASH expression"
     bin = Binary(BinaryOp.DIV, p[1], p[3])
     bin.lineno = p.lineno(2)
     p[0] = bin
 
-def p_expression8(p):
+def p_expression7(p):
     "expression : expression PERCENT expression"
     bin = Binary(BinaryOp.REM, p[1], p[3])
     bin.lineno = p.lineno(2)
     p[0] = bin
 
-def p_expression9(p):
+def p_expression8(p):
     "expression : expression PLUS expression"
     bin = Binary(BinaryOp.PLUS, p[1], p[3])
     bin.lineno = p.lineno(2)
     p[0] = bin
 
-def p_expression10(p):
+def p_expression9(p):
     "expression : expression MINUS expression"
     bin = Binary(BinaryOp.MINUS, p[1], p[3])
     bin.lineno = p.lineno(2)
     p[0] = bin
 
-def p_expression11(p):
+def p_expression10(p):
     "expression : expression LESS expression"
     bin = Binary(BinaryOp.LT, p[1], p[3])
     bin.lineno = p.lineno(2)
     p[0] = bin
 
-def p_expression12(p):
+def p_expression11(p):
     "expression : expression LESS_EQUALS expression"
     bin = Binary(BinaryOp.LTE, p[1], p[3])
     bin.lineno = p.lineno(2)
     p[0] = bin
 
-def p_expression13(p):
+def p_expression12(p):
     "expression : expression GREATER expression"
     bin = Binary(BinaryOp.GT, p[1], p[3])
     bin.lineno = p.lineno(2)
     p[0] = bin
 
-def p_expression14(p):
+def p_expression13(p):
     "expression : expression GREATER_EQUALS expression"
     bin = Binary(BinaryOp.GTE, p[1], p[3])
     bin.lineno = p.lineno(2)
     p[0] = bin
 
-def p_expression15(p):
+def p_expression14(p):
     "expression : expression EQUALS expression"
     bin = Binary(BinaryOp.EQ, p[1], p[3])
     bin.lineno = p.lineno(2)
     p[0] = bin
 
-def p_expression16(p):
+def p_expression15(p):
     "expression : expression EXCLAMATION_EQUALS expression"
     bin = Binary(BinaryOp.NEQ, p[1], p[3])
     bin.lineno = p.lineno(2)
     p[0] = bin
 
-def p_expression17(p):
+def p_expression16(p):
     "expression : expression AMPERSAND_AMPERSAND expression"
     bin = Binary(BinaryOp.AND, p[1], p[3])
     bin.lineno = p.lineno(2)
     p[0] = bin
 
-def p_expression18(p):
+def p_expression17(p):
     "expression : expression PIPE_PIPE expression"
     bin = Binary(BinaryOp.OR, p[1], p[3])
     bin.lineno = p.lineno(2)
     p[0] = bin
 
-def p_expression19(p):
+def p_expression18(p):
     "expression : BOOL_LITERAL"
     p[0] = Literal(p[1], Type(TypeEnum.BOOL))
 
-# def p_expression20(p):
-#     "expression : FALSE"
-#     p[0] = Literal(p[1], Type(TypeEnum.BOOL))
-    
-def p_expression21(p):
+def p_expression19(p):
     "expression : INT_LITERAL"
     p[0] = Literal(p[1], Type(TypeEnum.INT))
 
-def p_expression22(p):
+def p_expression20(p):
     "expression : FLT_LITERAL"
     p[0] = Literal(p[1], Type(TypeEnum.FLT))
 
-def p_expression23(p):
+def p_expression21(p):
     "expression : STR_LITERAL"
     p[0] = Literal(p[1], Type(TypeEnum.STR))
 
-def p_expression24(p):
+def p_expression22(p):
     "expression : CHR_LITERAL"
     p[0] = Literal(p[1], Type(TypeEnum.CHA))
 
-def p_expression25(p):
+def p_expression23(p):
     "expression : IDENT"
     p[0] = Ident(p[1], False)
 
-def p_expression26(p):
+def p_expression24(p):
     "expression : functionCall %prec FUNCTION_CALL"
     p[0] = p[1]
 
@@ -641,7 +627,10 @@ def p_functionCallArguments2(p):
     p[0] = p[3]
 
 def p_error(p):
-    print(f"Syntax error at '{p.value}'. On line {p.lineno}")
+    if not p:
+        print("Syntax error in code. Cannot give more information, sorry. Probably there is a missing ';'")
+    else:
+        print(f"Syntax error at '{p.value}'. On line {p.lineno}")
     exit(2)
 
 def parse(data, parserStart="start"):

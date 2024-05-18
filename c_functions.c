@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <math.h>
 
 void print_int(int n) {
   printf("%d\n", n);
@@ -35,4 +36,8 @@ int* int_array(int size) {
 
 int** int_array_array(int size) {
   return malloc(size * sizeof(int*));
+}
+
+int pow_int(int b, int e) {
+  return pow(b, e);
 }

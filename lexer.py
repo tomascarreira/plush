@@ -44,7 +44,6 @@ tokens = [
 	"PLUS",
 	"MINUS",
 	"STAR",
-	"CIRCUMFLEX",
 	"SLASH",
 	"PERCENT",
 ] + list(reserved.values())
@@ -71,7 +70,6 @@ t_LESS_EQUALS = r"<\="
 t_PLUS = r"\+"
 t_MINUS = r"\-"
 t_STAR = r"\*"
-t_CIRCUMFLEX = r"\^"
 t_SLASH = r"/"
 t_PERCENT = r"%"
 

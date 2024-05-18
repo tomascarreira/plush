@@ -90,6 +90,8 @@ def eval(node, ctx: Context):
                         res = eval(args[0], ctx)*[0]
                     case "int_array_array":
                         res = eval(args[0], ctx)*[[]]
+                    case "pow":
+                        res = eval(args[0], ctx) ** eval(args[1], ctx)
                 
                     case _:
                         print(f"Dont recognonize function {ident}")
@@ -116,8 +118,6 @@ def eval(node, ctx: Context):
             l = eval(left, ctx)
             r = eval(right, ctx)
             match op:
-                case BinaryOp.EXP:
-                    res = l ** r
                 case BinaryOp.MULT:
                     res = l * r
                 case BinaryOp.DIV:

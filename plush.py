@@ -29,8 +29,8 @@ if __name__ == "__main__":
 
         os.system(f"llc {outName} -o {outName.rsplit('.', 1)[0].rsplit('/', 1)[-1]+'.s'}")  
         os.system("make c_functions")  
-        os.system(f"gcc -c {outName.rsplit('.', 1)[0].rsplit('/', 1)[-1]+'.s'} -o {outName.rsplit('.', 1)[0].rsplit('/', 1)[-1]+'.o'}")
-        os.system(f"gcc c_functions.o {outName.rsplit('.', 1)[0].rsplit('/', 1)[-1]+'.o'} -o {outName.rsplit('.', 1)[0].rsplit('/', 1)[-1]}")
+        os.system(f"gcc -g -c {outName.rsplit('.', 1)[0].rsplit('/', 1)[-1]+'.s'} -o {outName.rsplit('.', 1)[0].rsplit('/', 1)[-1]+'.o'}")
+        os.system(f"gcc -g -lm c_functions.o {outName.rsplit('.', 1)[0].rsplit('/', 1)[-1]+'.o'} -o {outName.rsplit('.', 1)[0].rsplit('/', 1)[-1]}")
 
     else:
         while True:
@@ -42,6 +42,7 @@ if __name__ == "__main__":
             typeCtx.addFuncDef(Declaration("print_int_array", [("val", "arr", Type(TypeEnum.INT, 1)), ("val", "size", Type(TypeEnum.INT))], Type(TypeEnum.VOID)))
             typeCtx.addFuncDef(Declaration("int_array", [("val", "size", Type(TypeEnum.INT))], Type(TypeEnum.INT, 1)))
             typeCtx.addFuncDef(Declaration("int_array_array", [("val", "size", Type(TypeEnum.INT))], Type(TypeEnum.INT, 2)))
+            typeCtx.addFuncDef(Declaration("pow", [("val", "b", Type(TypeEnum.INT)), ("val", "e", Type(TypeEnum.INT))], Type(TypeEnum.INT)))
             verify(typeCtx, ast)
             pp_ast(ast)
             eval(ast, ValueContext())

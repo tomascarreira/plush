@@ -191,7 +191,7 @@ def second_pass(ctx: Context, node: Node):
 
                 exprType = Type(lType.type, lType.listDepth - 1)
 
-            elif op in [BinaryOp.EXP, BinaryOp.MULT, BinaryOp.DIV, BinaryOp.REM, BinaryOp.PLUS, BinaryOp.MINUS]:
+            elif op in [BinaryOp.MULT, BinaryOp.DIV, BinaryOp.REM, BinaryOp.PLUS, BinaryOp.MINUS]:
                 if lType == Type(TypeEnum.FLT) and rType == Type(TypeEnum.FLT):
                     exprType = Type(TypeEnum.FLT)
                 elif lType == Type(TypeEnum.INT) and rType == Type(TypeEnum.INT):

@@ -177,10 +177,6 @@ def codegen(node, emitter=None):
             res = emitter.next()
 
             match op:
-                case BinaryOp.EXP:
-                    print("Por enquanto não suporta exponenciação")
-                    exit(4)
-
                 case BinaryOp.MULT:
                     emitter << f"  %{res} = {'mul' if node.exprType.type == TypeEnum.INT else 'fmul'} {node.exprType.llvm()}  {lReg}, {rReg}"
 

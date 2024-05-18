@@ -8,6 +8,8 @@ void print_str(char* s);
 void print_int_array(int* arr, int size);
 
 int* int_array(int size);
-int** int_array(int size);
+int** int_array_array(int size);
+
+int pow_int(int b, int e);
 
 #endif
