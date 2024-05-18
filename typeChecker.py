@@ -192,21 +192,21 @@ def second_pass(ctx: Context, node: Node):
                 exprType = Type(lType.type, lType.listDepth - 1)
 
             elif op in [BinaryOp.EXP, BinaryOp.MULT, BinaryOp.DIV, BinaryOp.REM, BinaryOp.PLUS, BinaryOp.MINUS]:
-                if lType == Type(TypeEnum.FLT) or rType == Type(TypeEnum.FLT):
+                if lType == Type(TypeEnum.FLT) and rType == Type(TypeEnum.FLT):
                     exprType = Type(TypeEnum.FLT)
                 elif lType == Type(TypeEnum.INT) and rType == Type(TypeEnum.INT):
                     exprType = Type(TypeEnum.INT)
                 else:
-                    print(f"lhs and rhs must be int, int or int, float or float, float. Got type {lType}, {rType}. On line {node.lineno}")
+                    print(f"lhs and rhs must be both int or both float. Got type {lType}, {rType}. On line {node.lineno}")
                     exit(3)
 
             elif op in [BinaryOp.LT, BinaryOp.LTE, BinaryOp.GT, BinaryOp.GTE, BinaryOp.EQ, BinaryOp.NEQ]:
-                if lType == Type(TypeEnum.FLT) or rType == Type(TypeEnum.FLT):
+                if lType == Type(TypeEnum.FLT) and rType == Type(TypeEnum.FLT):
                     exprType =Type(TypeEnum.BOOL)
                 elif lType == Type(TypeEnum.INT) and rType == Type(TypeEnum.INT):
                     exprType =Type(TypeEnum.BOOL)
                 else:
-                    print(f"lhs and rhs must be int or float. Got type {lType}, {rType}. On line {node.lineno}")
+                    print(f"lhs and rhs must be both int or both float. Got type {lType}, {rType}. On line {node.lineno}")
                     exit(3)
 
             else:
