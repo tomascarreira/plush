@@ -641,7 +641,7 @@ def p_functionCallArguments2(p):
     p[0] = p[3]
 
 def p_error(p):
-    print("Syntax error in input. ", p)
+    print(f"Syntax error at '{p.value}'. On line {p.lineno}")
     exit(2)
 
 def parse(data, parserStart="start"):
