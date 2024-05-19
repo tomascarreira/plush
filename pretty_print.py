@@ -51,8 +51,8 @@ def pp_ast(node, depth=0):
             pp_ast(thenBlock, depth+1)
             pp_ast(elseBlock, depth+1)
 
-        case VariableDefinition(varType, ident, type, rhs):
-            print(f"Variable Definition {varType} {ident} {type}")
+        case VariableDefinition(varType, ident, type, rhs, shadow):
+            print(f"Variable Definition {varType} {ident} {type} {'shadow' if node.shadows > 0 else ''}")
             pp_ast(rhs, depth+1)
 
         case FunctionCall(ident, args):
@@ -70,7 +70,7 @@ def pp_ast(node, depth=0):
             pp_ast(expression, depth+1)
 
         case Ident(ident):
-            print(f"Ident {ident}", f"global" if node.glob else "", f"{node.exprType}" if node.exprType else "")
+            print(f"Ident {ident}", f"global" if node.glob else "", f"{node.exprType}" if node.exprType else "", f"shadow" if node.shadows > 0 else "")
 
         case Literal(val, type):
             print(f"Literal {val} {type}", f"{node.exprType}" if node.exprType else "")

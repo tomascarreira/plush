@@ -213,6 +213,7 @@ class Literal(Expression):
 class Ident(Expression):
     ident: str
     glob: bool
+    shadows: int
 
 @dataclass
 class CodeBlock(Node):
@@ -242,6 +243,7 @@ class VariableDefinition(Statement):
     ident: str
     type: Type
     rhs: Expression
+    shadow: int
 
 @dataclass
 class Declaration(Node):
@@ -456,7 +458,7 @@ def p_wileStatement(p):
 
 def p_variableDefiniton(p):
     "variableDefinition : varType IDENT COLON type COLON_EQUALS expression SEMICOLON"
-    varDef = VariableDefinition(p[1], p[2], p[4], p[6])
+    varDef = VariableDefinition(p[1], p[2], p[4], p[6], 0)
     varDef.lineno = p.lineno(2)
     p[0] = varDef
 
@@ -600,7 +602,7 @@ def p_expression22(p):
 
 def p_expression23(p):
     "expression : IDENT"
-    ident = Ident(p[1], False)
+    ident = Ident(p[1], False, 0)
     ident.lineno = p.lineno(1)
     p[0] = ident
 

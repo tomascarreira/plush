@@ -37,6 +37,14 @@ class Context:
             if ident in scope:
                 return len(self.stack) - i == 1
 
+    def getShadows(self, ident):
+        count = 0
+        for scope in self.stack:
+            if ident in scope:
+                count += 1
+
+        return count - 1
+
     def addFuncDef(self, functionHeader):
         self.funcDefs[functionHeader.ident] = functionHeader
 
@@ -121,6 +129,9 @@ def second_pass(ctx: Context, node: Node):
                 print(f"Righ hand side expression is type {rhsType} but its declare to have type {type}. On line {node.lineno}")
                 exit(3)
             ctx.add(ident, type, varType)
+
+            if ctx.getType(ident):
+                node.shadows = ctx.getShadows(ident)
 
         case Assignment(ident, indexing, rhs):
             type = second_pass(ctx, rhs) 
@@ -246,6 +257,7 @@ def second_pass(ctx: Context, node: Node):
                 exit(3)
 
             node.glob = ctx.isGlobalVar(ident)
+            node.shadows = ctx.getShadows(ident)
 
             node.exprType = idType
 

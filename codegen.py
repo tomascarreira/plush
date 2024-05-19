@@ -67,7 +67,6 @@ def codegen(node, emitter=None):
             args = functionHeader.args[::-1]
             retType = functionHeader.retType
 
-            # Permitir não escrever que a função main devolve um int e main := 0
             if ident == "main":
                 retType = Type(TypeEnum.INT)
 
@@ -156,8 +155,8 @@ def codegen(node, emitter=None):
 
         case VariableDefinition(varType, ident, type, rhs):
             reg = codegen(rhs, emitter)
-            emitter << f"  %{ident}.addr = alloca {type.llvm()}"
-            emitter << f"  store {type.llvm()} {reg}, ptr %{ident}.addr"
+            emitter << f"  %{ident}{node.shadows if node.shadows > 0 else ''}.addr = alloca {type.llvm()}"
+            emitter << f"  store {type.llvm()} {reg}, ptr %{ident}{node.shadows if node.shadows > 0 else ''}.addr"
 
         case FunctionCall(ident, args):
             llvmArgs = ",".join(f"{arg.exprType.llvm()} {codegen(arg, emitter)}" for arg in args[::-1])
@@ -231,7 +230,7 @@ def codegen(node, emitter=None):
             if node.glob:
                 emitter << f"  %{reg} = load {node.exprType.llvm()}, ptr @{ident}"
             else:
-                emitter << f"  %{reg} = load {node.exprType.llvm()}, ptr %{ident}.addr"
+                emitter << f"  %{reg} = load {node.exprType.llvm()}, ptr %{ident}{node.shadows if node.shadows > 0 else ''}.addr"
 
             return f"%{reg}"
 
