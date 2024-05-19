@@ -599,7 +599,9 @@ def p_expression22(p):
 
 def p_expression23(p):
     "expression : IDENT"
-    p[0] = Ident(p[1], False)
+    ident = Ident(p[1], False)
+    ident.lineno = p.lineno(1)
+    p[0] = ident
 
 def p_expression24(p):
     "expression : functionCall %prec FUNCTION_CALL"

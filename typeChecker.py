@@ -186,7 +186,7 @@ def second_pass(ctx: Context, node: Node):
                     exit(3)
 
                 if lType.listDepth < 1:
-                    print(f"Cannot index not list type. On line {node.lineno}")
+                    print(f"Can only index a list and not type '{lType}'. On line {node.lineno}")
                     exit(3)
 
                 exprType = Type(lType.type, lType.listDepth - 1)
