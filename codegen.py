@@ -221,7 +221,7 @@ def codegen(node, emitter=None):
                     emitter << f"  %{res} = {'sub' if node.exprType.type == TypeEnum.INT else 'fsub'} {node.exprType.llvm()} {0 if node.exprType.type == TypeEnum.INT else 0.0}, {reg}"
 
                 case UnaryOp.NOT:
-                    emitter << f"  %{res} = xor {reg}, true"
+                    emitter << f"  %{res} = xor i1 {reg}, true"
 
             return f"%{res}"
 
