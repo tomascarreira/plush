@@ -213,16 +213,17 @@ def codegen(node, emitter=None):
 
         case Unary(op, expression):
 
+            res = emitter.next()
             reg = codegen(expression, emitter)
 
             match op:
                 case UnaryOp.NEGATION:
-                    emitter << f"  {res} = {node.exprType.llvm()} {'sub' if node.exprType.type == TypeEnum.INT else 'fsub'} 0, {reg}"
+                    emitter << f"  %{res} = {'sub' if node.exprType.type == TypeEnum.INT else 'fsub'} {node.exprType.llvm()} {0 if node.exprType.type == TypeEnum.INT else 0.0}, {reg}"
 
                 case UnaryOp.NOT:
-                    emitter << f"  {res} = xor {reg}, true"
+                    emitter << f"  %{res} = xor {reg}, true"
 
-            return f"%{reg}"
+            return f"%{res}"
 
         case Ident(ident):
             reg = emitter.next()
