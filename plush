@@ -1,0 +1,22 @@
+#!/bin/bash
+
+POSITIONAL_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --tree)
+      TREE=YES
+      shift 
+      ;;
+    *)
+      LAST_ONE=$1
+      shift # past argument
+      ;;
+  esac
+done
+
+if [[ -n $TREE ]]; then
+  python plush.py $LAST_ONE -t
+else
+  python plush.py $LAST_ONE
+fi

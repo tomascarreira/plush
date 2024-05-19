@@ -15,7 +15,9 @@ if __name__ == "__main__":
 
         verify(TypeContext(), ast)
         # print("=====AST=====")
-        # pp_ast(ast)
+        if len(sys.argv) > 2:
+            pp_ast(ast)
+            exit(0)
 
         emitter = codegen(ast)
         # print("=====Codegen=====")
