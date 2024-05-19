@@ -114,7 +114,7 @@ def codegen(node, emitter=None):
                 emitter << f"  store {rhs.exprType.llvm()} {reg}, ptr %arrayidx{arrIdx}"
             # Cannot have global arrays so only need to check when there is no indexing
             else:
-                emitter << f"  store {rhs.exprType.llvm()}  {reg}, ptr {'@'+ ident if node.glob else '%'+ident+'addr'}"
+                emitter << f"  store {rhs.exprType.llvm()}  {reg}, ptr {'@'+ ident if node.glob else '%'+ident+'.addr'}"
 
         case While(guard, codeBlock):
 
