@@ -1,6 +1,4 @@
-#!/bin/bash
-
-POSITIONAL_ARGS=()
+#!/bin/sh
 
 while [[ $# -gt 0 ]]; do
   case $1 in
