@@ -245,7 +245,7 @@ def codegen(node, emitter=None):
                     emitter.addTop(f"@str.{lit} = constant [{len(val)+1} x i8] c\"{val}\\00\"")
                     val = f"@str.{lit}"
                 case TypeEnum.CHA:
-                    val = ord(c)
+                    val = ord(val)
                 case TypeEnum.BOOL:
                     val = "true" if val else "false"
                 case _:
