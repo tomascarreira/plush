@@ -158,7 +158,7 @@ class BinaryOp(Enum):
             case BinaryOp.EQ:
                 res = "eq"
             case BinaryOp.NEQ:
-                res = "neq"
+                res = "ne"
 
         return res
 
