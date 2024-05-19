@@ -1,3 +1,7 @@
 FROM nixos/nix
 
-RUN nix-shell -p python311 python311Packages.ply llvm gcc
+RUN nix-shell -p git
+
+RUN git clone https://github.com/tomascarreira/plush.git
+
+WORKDIR /plush
