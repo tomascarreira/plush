@@ -45,6 +45,9 @@ class Context:
 
         return count - 1
 
+    def definedCurrentScope(self, ident):
+        return ident in self.stack[-1]
+
     def addFuncDef(self, functionHeader):
         self.funcDefs[functionHeader.ident] = functionHeader
 
@@ -128,6 +131,11 @@ def second_pass(ctx: Context, node: Node):
             if type != rhsType:
                 print(f"Righ hand side expression is type {rhsType} but its declare to have type {type}. On line {node.lineno}")
                 exit(3)
+
+            if ctx.definedCurrentScope(ident):
+                print(f"Cannot shadow variables in the same scope. On line {node.lineno}")
+                exit(3)
+
             ctx.add(ident, type, varType)
 
             if ctx.getType(ident):
