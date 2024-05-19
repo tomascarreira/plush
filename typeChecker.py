@@ -124,7 +124,6 @@ def second_pass(ctx: Context, node: Node):
 
         case Assignment(ident, indexing, rhs):
             type = second_pass(ctx, rhs) 
-            # TODO: handle when there is no return type
             ctxVarType = ctx.getVarType(ident)
             if ctxVarType == VarType.VAL:
                 print(f"Cannot assign to val variable {ident}. On line {node.lineno}")
