@@ -231,8 +231,8 @@ def second_pass(ctx: Context, node: Node):
                     exit(3)
 
             elif op == UnaryOp.NOT:
-                if type == Type(TypeEnum.BOOL):
-                    print(f"Operand of negation must be a int or float. Got type {type}. On line {node.lineno}")
+                if type != Type(TypeEnum.BOOL):
+                    print(f"Operand of not must be a bool. Got type {type}. On line {node.lineno}")
                     exit(3)
                 node.exprType = Type(TypeEnum.BOOL)
                 return Type(TypeEnum.BOOL)
