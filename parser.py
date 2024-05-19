@@ -234,6 +234,7 @@ class Assignment(Statement):
     ident: str
     indexing: Expression
     rhs: Expression
+    glob: bool
 
 @dataclass
 class VariableDefinition(Statement):
@@ -461,7 +462,7 @@ def p_variableDefiniton(p):
 
 def p_variableAssignment(p):
     "variableAssingment : leftHandSide COLON_EQUALS expression SEMICOLON"
-    ass = Assignment(p[1][0], p[1][1], p[3])
+    ass = Assignment(p[1][0], p[1][1], p[3], False)
     ass.lineno = p.lineno(2)
     p[0] = ass
 

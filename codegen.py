@@ -112,8 +112,9 @@ def codegen(node, emitter=None):
                 # array pointers are i32 because i dont want to cast them when the indexing comes from an expression
                 emitter << f"  %arrayidx{arrIdx} = getelementptr {rhs.exprType.llvm()}, ptr %{regArr}, i32 {idx}"
                 emitter << f"  store {rhs.exprType.llvm()} {reg}, ptr %arrayidx{arrIdx}"
+            # Cannot have global arrays so only need to check when there is no indexing
             else:
-                emitter << f"  store {rhs.exprType.llvm()}  {reg}, ptr %{ident}.addr"
+                emitter << f"  store {rhs.exprType.llvm()}  {reg}, ptr {'@'+ ident if node.glob else '%'+ident+'addr'}"
 
         case While(guard, codeBlock):
 

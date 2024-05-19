@@ -143,6 +143,9 @@ def second_pass(ctx: Context, node: Node):
                 print(f"Cannot assign {type} to a variable with type {ctxType}. On line {node.lineno}")
                 exit(3)
 
+            if ctx.isGlobalVar(ident):
+                node.glob = True
+
         case While(guard, codeBlock):
             guardType = second_pass(ctx, guard)
             if guardType != Type(TypeEnum.BOOL):
