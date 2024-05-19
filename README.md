@@ -4,7 +4,7 @@ A compiler for the language plush
 
 Tomás Carreira nº50760
 
-## Projecture Structure
+## Project Structure
 
 **plush.py**: entry of the program
 
@@ -20,7 +20,7 @@ Tomás Carreira nº50760
 
 **pretty_print.py**: used to print the tree of the language `plush -tree program.pl`
 
-**c_functions.c**, **c_functions.h**,  **Makefile**: location of the external functions that can be used. the makefile build the functions into an object for linking
+**c_functions.c**, **c_functions.h**,  **Makefile**: location of the external functions that can be used. The makefile build the functions into an object for linking
 
 **setup.sh**, **Dockerfile**: docker file and bash script for getting an enviroment with the dependencies required to use the compiler
 
