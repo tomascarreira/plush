@@ -67,7 +67,7 @@ def pp_ast(node, depth=0):
                 pp_ast(arg, depth+1)
 
         case StructInit(ident, initFields):
-            print(f"Struct Init {ident}")
+            print(f"Struct Init {ident}", f"{node.exprType}" if node.exprType else "")
             for field in initFields:
                 pp_ast(field, depth+1)
 

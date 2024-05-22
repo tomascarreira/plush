@@ -240,6 +240,8 @@ def second_pass(ctx: Context, node: Node):
                 if  initType!= fieldDefType[1]:
                     print(f"Got wrong type of field in struct initialization, expected '{fieldDefType[1]}' but got type '{initType}'.On line {node.lineno}")
                     exit(3)
+
+            node.exprType = Type(TypeEnum.STRUCT, structName=ident)
             return Type(TypeEnum.STRUCT, structName=ident)
 
         case Binary(op, left, right):
