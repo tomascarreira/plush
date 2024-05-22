@@ -172,7 +172,7 @@ def second_pass(ctx: Context, node: Node):
                     exit(3)
 
             if fieldAccessing:
-                structDef = ctx.getStructDef(ident)
+                structDef = ctx.getStructDef(ctxType.structName)
                 if not structDef:
                     print(f"Cannot access field '{fieldAccessing}' of a non struct type '{ident}'. On line {node.lineno}")
                     exit(3)

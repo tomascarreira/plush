@@ -13,7 +13,6 @@ if __name__ == "__main__":
             input = file.read()
             ast = parse(input)
 
-        pp_ast(ast)
         verify(TypeContext(), ast)
         # print("=====AST=====")
         if len(sys.argv) > 2:
