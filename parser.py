@@ -12,8 +12,9 @@ class TypeEnum(Enum):
     CHA = 3
     BOOL = 4
     VOID = 5
+    STRUCT = 6
 
-    def __str__(self):
+    def __str__(self, structName=""):
         match self:
             case TypeEnum.INT:
                 res = "int"
@@ -27,6 +28,8 @@ class TypeEnum(Enum):
                 res = "bool"
             case TypeEnum.VOID:
                 res = "void"
+            case TypeEnum.STRUCT:
+                res = "struct " + structName
 
         return res
 
@@ -51,16 +54,19 @@ class TypeEnum(Enum):
 class Type:
     type: TypeEnum
     listDepth: int = 0
+    structName: str = ""
 
     def __eq__(self, o):
         if isinstance(o, Type):
-            return self.type == o.type and self.listDepth == o.listDepth
+            return self.type == o.type and self.listDepth == o.listDepth and self.structName == o.structName
 
         return False
 
     def __str__(self):
         if self.listDepth == 0:
             return str(self.type)
+        elif self.structName != "":
+            return str(self.type, self.structName)
         else:
             return "["*self.listDepth + str(self.type) + "]"*self.listDepth
 
@@ -111,6 +117,7 @@ class BinaryOp(Enum):
     AND = 11
     OR = 12
     INDEXING = 13
+    DOT = 14
 
     def __str__(self):
         match self:
@@ -142,6 +149,8 @@ class BinaryOp(Enum):
                 res = "||"
             case BinaryOp.INDEXING:
                 res = "[]"
+            case BinaryOp.DOT:
+                res = "."
 
         return res
 
@@ -189,6 +198,10 @@ class Expression(Node):
     exprType: Type = None
 
 @dataclass
+class Field(Expression):
+    ident: str
+
+@dataclass
 class Unary(Expression):
     op: UnaryOp
     expression: Expression
@@ -216,6 +229,11 @@ class Ident(Expression):
     shadows: int
 
 @dataclass
+class StructInit(Expression):
+    ident: str
+    initFields: list[Expression]
+
+@dataclass
 class CodeBlock(Node):
     statements: list[Statement]
 
@@ -234,6 +252,7 @@ class While(Statement):
 class Assignment(Statement):
     ident: str
     indexing: Expression
+    fieldAccessing: str
     rhs: Expression
     glob: bool
 
@@ -245,11 +264,19 @@ class VariableDefinition(Statement):
     rhs: Expression
     shadow: int
 
-@dataclass
 class Declaration(Node):
+    pass
+
+@dataclass
+class FunctionDeclaration(Declaration):
     ident: str
     args: list[(VarType, str, Type)]
     retType: Type
+
+@dataclass
+class StructDeclaration(Declaration):
+    ident: str
+    fields: list[(VarType, str, Type)]
 
 class Definition(Node):
     pass
@@ -263,19 +290,16 @@ class GlobalVariableDefinition(Definition):
 
 @dataclass
 class FunctionDefinition(Definition):
-    functionHeader: Declaration
+    functionHeader: FunctionDeclaration
     codeBlock: CodeBlock
 
 @dataclass
 class Program(Node):
-    declarations: list[Declaration]
+    declarations: list[FunctionDeclaration]
     definitions: list[Definition]
 
 precedence = (
-    # WEIRD FIX SHIFT/REDUCE conflict. Não sei bem qual se isto pode causar outros problemas
-    # ("nonassoc", "IDENT"),
     ("nonassoc", "FUNCTION_CALL"),
-    # ("nonassoc", "INDEXING"),
     ("nonassoc", "LPAREN", "RPAREN"),
     ("nonassoc", "LSQUARE", "RSQUARE"),
     ("right", "NEGATION", "EXCLAMATION"),
@@ -301,9 +325,36 @@ def p_start3(p):
     p[2].definitions.append(p[1])
     p[0] = p[2]
 
-def p_declaration(p):
+def p_declaration1(p):
     "declaration : functionHeader SEMICOLON"
     p[0] = p[1]
+
+def p_declaration2(p):
+    "declaration : structDeclaration"
+    p[0] = p[1]
+
+def p_structDeclaration(p):
+    "structDeclaration : STRUCT IDENT LCURLY structFields RCURLY"
+    structDecl = StructDeclaration(p[2], p[4])
+    structDecl.lineno = p.lineno(1)
+    p[0] = structDecl
+
+def p_structFields1(p):
+    "structFields : structField"
+    p[0] = {p[1][0]: p[1][1]}
+
+def p_structFields2(p):
+    "structFields : structField COMMA"
+    p[0] = {p[1][0]: p[1][1]}
+
+def p_structFields3(p):
+    "structFields : structField COMMA structFields"
+    p[3][p[1][0]] = p[1][1]
+    p[0] = p[3]
+
+def p_structField(p):
+    "structField : varType IDENT COLON type"
+    p[0] = (p[2], (p[1], p[4]))
 
 def p_definition1(p):
     "definition : globalVariableDefinition"
@@ -337,11 +388,11 @@ def p_functionHeader(p):
     "functionHeader : FUNCTION IDENT LPAREN functionArguments RPAREN returnType"
     if not p[6]:
         p[6] = Type(TypeEnum.VOID)
-    dec = Declaration(p[2], p[4], p[6])
+    dec = FunctionDeclaration(p[2], p[4], p[6])
     dec.lineno = p.lineno(2)
     p[0] = dec
 
-def p_fucntionArguments1(p):
+def p_functionArguments1(p):
     "functionArguments : "
     p[0] = []
 
@@ -398,6 +449,10 @@ def p_type7(p):
     "type : LSQUARE type RSQUARE"
     p[2].listDepth += 1
     p[0] = p[2]
+
+def p_type8(p):
+    "type : STRUCT IDENT"
+    p[0] = Type(TypeEnum.STRUCT, structName=p[2])
 
 def p_codeBlock1(p):
     "codeBlock : LCURLY RCURLY"
@@ -464,17 +519,21 @@ def p_variableDefiniton(p):
 
 def p_variableAssignment(p):
     "variableAssingment : leftHandSide COLON_EQUALS expression SEMICOLON"
-    ass = Assignment(p[1][0], p[1][1], p[3], False)
+    ass = Assignment(p[1][0], p[1][1],p[1][2], p[3], False)
     ass.lineno = p.lineno(2)
     p[0] = ass
 
 def p_leftHandSide1(p):
     "leftHandSide : IDENT"
-    p[0] = (p[1], None)
+    p[0] = (p[1], None, None)
     
 def p_leftHandSide2(p):
     "leftHandSide : IDENT indexAccess"
-    p[0] = (p[1], p[2])
+    p[0] = (p[1], p[2], None)
+
+def p_leftHandSide3(p):
+    "leftHandSide : IDENT PERIOD IDENT"
+    p[0] = (p[1], None, p[3])
 
 def p_indexAccess(p):
     "indexAccess : LSQUARE expression RSQUARE"
@@ -630,6 +689,31 @@ def p_functionCallArguments2(p):
     "functionCallArguments : expression COMMA functionCallArguments"
     p[3].append(p[1])
     p[0] = p[3]
+
+def p_expression25(p):
+    "expression : STRUCT IDENT LPAREN initFields RPAREN"
+    structInit = StructInit(p[2], p[4])
+    structInit.lineno = p.lineno(1)
+    p[0] = structInit
+
+def p_intiFields1(p):
+    "initFields : expression"
+    p[0] = [p[1]]
+
+def p_intiFields2(p):
+    "initFields : expression COMMA initFields"
+    p[3].append(p[1])
+    p[0] = p[3]
+
+def p_expression26(p):
+    "expression : expression PERIOD field"
+    bin = Binary(BinaryOp.DOT, p[1], p[3])
+    bin.lineno = p.lineno(2)
+    p[0] = bin
+
+def p_field(p):
+    "field : IDENT"
+    p[0] = Field(p[1])
 
 def p_error(p):
     if not p:

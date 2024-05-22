@@ -1,7 +1,7 @@
 import sys
 import os
 
-from parser import parse, Declaration, Type, TypeEnum
+from parser import parse, FunctionDeclaration, Type, TypeEnum
 from typeChecker import verify, Context as TypeContext
 from interpreter import eval, Context as ValueContext
 from codegen import codegen
@@ -13,6 +13,7 @@ if __name__ == "__main__":
             input = file.read()
             ast = parse(input)
 
+        pp_ast(ast)
         verify(TypeContext(), ast)
         # print("=====AST=====")
         if len(sys.argv) > 2:
@@ -39,12 +40,12 @@ if __name__ == "__main__":
             input = sys.stdin.readline()
             ast = parse(input, parserStart="statement")
             typeCtx = TypeContext()
-            typeCtx.addFuncDef(Declaration("print_int", [("val", "n", Type(TypeEnum.INT))], Type(TypeEnum.VOID)))
-            typeCtx.addFuncDef(Declaration("print_bool", [("val", "n", Type(TypeEnum.BOOL))], Type(TypeEnum.VOID)))
-            typeCtx.addFuncDef(Declaration("print_int_array", [("val", "arr", Type(TypeEnum.INT, 1)), ("val", "size", Type(TypeEnum.INT))], Type(TypeEnum.VOID)))
-            typeCtx.addFuncDef(Declaration("int_array", [("val", "size", Type(TypeEnum.INT))], Type(TypeEnum.INT, 1)))
-            typeCtx.addFuncDef(Declaration("int_array_array", [("val", "size", Type(TypeEnum.INT))], Type(TypeEnum.INT, 2)))
-            typeCtx.addFuncDef(Declaration("pow", [("val", "b", Type(TypeEnum.INT)), ("val", "e", Type(TypeEnum.INT))], Type(TypeEnum.INT)))
+            typeCtx.addFuncDef(FunctionDeclaration("print_int", [("val", "n", Type(TypeEnum.INT))], Type(TypeEnum.VOID)))
+            typeCtx.addFuncDef(FunctionDeclaration("print_bool", [("val", "n", Type(TypeEnum.BOOL))], Type(TypeEnum.VOID)))
+            typeCtx.addFuncDef(FunctionDeclaration("print_int_array", [("val", "arr", Type(TypeEnum.INT, 1)), ("val", "size", Type(TypeEnum.INT))], Type(TypeEnum.VOID)))
+            typeCtx.addFuncDef(FunctionDeclaration("int_array", [("val", "size", Type(TypeEnum.INT))], Type(TypeEnum.INT, 1)))
+            typeCtx.addFuncDef(FunctionDeclaration("int_array_array", [("val", "size", Type(TypeEnum.INT))], Type(TypeEnum.INT, 2)))
+            typeCtx.addFuncDef(FunctionDeclaration("pow", [("val", "b", Type(TypeEnum.INT)), ("val", "e", Type(TypeEnum.INT))], Type(TypeEnum.INT)))
             verify(typeCtx, ast)
             pp_ast(ast)
             eval(ast, ValueContext())

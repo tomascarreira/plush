@@ -1,4 +1,4 @@
-from parser import Node, Program, Declaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, Binary, Unary, Ident, Literal
+from parser import Node, Program, FunctionDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, Binary, Unary, Ident, Literal
 from parser import Type, TypeEnum, VarType, BinaryOp, UnaryOp
 
 class Context:
@@ -36,7 +36,7 @@ def eval(node, ctx: Context):
             [eval(dec, ctx) for dec in decs[::-1]]
             [eval(def_, ctx) for def_ in defs[::-1]]
 
-        case Declaration(ident, args, retType):
+        case FunctionDeclaration(ident, args, retType):
             pass
 
         case GlobalVariableDefinition(varType, ident, type, rhs):

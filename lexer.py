@@ -13,6 +13,7 @@ reserved = {
 	"string": "STRING",
 	"bool": "BOOL",
 	"void": "VOID",
+	"struct": "STRUCT"
 }
 
 tokens = [
@@ -28,6 +29,7 @@ tokens = [
 	"RSQUARE",
 	"LCURLY",
 	"RCURLY",
+	"PERIOD",
 	"COMMA",
 	"COLON",
 	"COLON_EQUALS",
@@ -54,6 +56,7 @@ t_LSQUARE = r"\["
 t_RSQUARE = r"\]"
 t_LCURLY = r"\{"
 t_RCURLY = r"\}"
+t_PERIOD = r"\."
 t_COMMA = r","
 t_COLON = r"\:"
 t_COLON_EQUALS = r"\:\="

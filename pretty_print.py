@@ -1,4 +1,4 @@
-from parser import Node, Program, Declaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, Binary, Unary, Ident, Literal
+from parser import Node, Program, FunctionDeclaration, StructDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, Binary, Unary, StructInit, Ident, Literal
 from parser import Type, BinaryOp, UnaryOp
 
 def pp_ast(node, depth=0):
@@ -11,10 +11,14 @@ def pp_ast(node, depth=0):
             for def_ in defs[::-1]:
                 pp_ast(def_)
 
-        case Declaration(ident, args, retType):
+        case FunctionDeclaration(ident, args, retType):
             print(f"Function Declaration {ident} {retType}")
             if len(args) > 0:
                 print("\n".join(f"  Function Argument {arg[0]} {arg[1]} {arg[2]}" for arg in args))
+
+        case StructDeclaration(ident, fields):
+            print(f"Struct Declaration {ident}")
+            print("\n".join(f"  Struct Field {varType} {name} {type}" for (name, (varType, type)) in fields.items()))
 
         case GlobalVariableDefinition(varType, ident, type, rhs):
             print(f"GlobalVariable Definition {varType} {ident} {type}")
@@ -29,7 +33,7 @@ def pp_ast(node, depth=0):
             for stat in statements[::-1]:
                 pp_ast(stat, depth+1)
 
-        case Assignment(ident, indexing, rhs):
+        case Assignment(ident, indexing, fieldAccessing, rhs):
             print(f"Assignment {ident}")
 
             if indexing:
@@ -37,8 +41,10 @@ def pp_ast(node, depth=0):
                 print(" ", "Indexing")
                 pp_ast(indexing, depth+2)
 
-            pp_ast(rhs, depth+1)
+            if fieldAccessing:
+                print("  "*(depth+1) + "Field Accessing " + fieldAccessing)
 
+            pp_ast(rhs, depth+1)
 
         case While(guard, codeBlock):
             print("While")
@@ -52,7 +58,7 @@ def pp_ast(node, depth=0):
             pp_ast(elseBlock, depth+1)
 
         case VariableDefinition(varType, ident, type, rhs, shadow):
-            print(f"Variable Definition {varType} {ident} {type} {'shadow' if node.shadows > 0 else ''}")
+            print(f"Variable Definition {varType} {ident} {type} {'shadow' if node.shadow > 0 else ''}")
             pp_ast(rhs, depth+1)
 
         case FunctionCall(ident, args):
@@ -60,10 +66,19 @@ def pp_ast(node, depth=0):
             for arg in args:
                 pp_ast(arg, depth+1)
 
+        case StructInit(ident, initFields):
+            print(f"Struct Init {ident}")
+            for field in initFields:
+                pp_ast(field, depth+1)
+
         case Binary(op, left, right):
             print(f"Binary {op}", f"{node.exprType}" if node.exprType else "")
-            pp_ast(left, depth+1)
-            pp_ast(right, depth+1)
+            if op == BinaryOp.DOT:
+                print("  "*depth + "  " + left.ident)
+                print("  "*depth + "  " + right.ident)
+            else:
+                pp_ast(left, depth+1)
+                pp_ast(right, depth+1)
 
         case Unary(op, expression):
             print(f"Unary {op}", f"{node.exprType}" if node.exprType else "")

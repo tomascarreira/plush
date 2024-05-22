@@ -1,10 +1,11 @@
-from parser import Node, Expression, Program, Declaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, Binary, Unary, Ident, Literal
+from parser import Node, Expression, Program, FunctionDeclaration, StructDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, StructInit, Binary, Unary, Ident, Literal, Field
 from parser import Type, TypeEnum, VarType, BinaryOp, UnaryOp
 
 class Context:
     def __init__(self):
         self.stack = [{}]
         self.funcDefs = {}
+        self.structDefs = {}
 
     def add(self, ident, type, varType):
         self.stack[-1][ident] = (type, varType)
@@ -57,6 +58,12 @@ class Context:
     def noFuncDefs(self):
         return len(self.funcDefs) == 0
 
+    def addStructDef(self, structDef):
+        self.structDefs[structDef.ident] = structDef
+
+    def getStructDef(self, ident):
+        return self.structDefs.get(ident, None)
+
 # Verifies if my interpreter can calculate the value for the llvm ir codegen of global variables
 def checkCompileTimeConst(expr: Expression) -> bool:
     match expr:
@@ -81,8 +88,11 @@ def first_pass(ctx: Context, node: Node):
             [first_pass(ctx, decl) for decl in decs[::-1]]
             [first_pass(ctx, defi) for defi in defs[::-1]]
 
-        case Declaration(ident, args, retType):
+        case FunctionDeclaration(ident, args, retType):
             ctx.addFuncDef(node)
+
+        case StructDeclaration(ident, fields):
+            ctx.addStructDef(node)
 
         case GlobalVariableDefinition(varType, ident, type, rhs):
             ctx.add(ident, type, varType)
@@ -102,7 +112,10 @@ def second_pass(ctx: Context, node: Node):
             [second_pass(ctx, decl) for decl in decs[::-1]]
             [second_pass(ctx, defi) for defi in defs[::-1]]
 
-        case Declaration(ident, args, retType):
+        case FunctionDeclaration(ident, args, retType):
+            pass
+
+        case StructDeclaration(ident, fields):
             pass
 
         case GlobalVariableDefinition(varType, ident, type, rhs):
@@ -111,7 +124,7 @@ def second_pass(ctx: Context, node: Node):
                 exit(3)
             rhsType = second_pass(ctx, rhs)
             if type != rhsType:
-                print(f"Righ hand side expression is type {rhsType} but its declare to have type {type}. On line {node.lineno}")
+                print(f"Right hand side expression is type {rhsType} but its declare to have type {type}. On line {node.lineno}")
                 exit(3)
 
         case FunctionDefinition(functionHeader, codeBlock):
@@ -129,7 +142,7 @@ def second_pass(ctx: Context, node: Node):
         case VariableDefinition(varType, ident, type, rhs):
             rhsType = second_pass(ctx, rhs)
             if type != rhsType:
-                print(f"Righ hand side expression is type {rhsType} but its declare to have type {type}. On line {node.lineno}")
+                print(f"Right hand side expression is type {rhsType} but its declare to have type {type}. On line {node.lineno}")
                 exit(3)
 
             if ctx.definedCurrentScope(ident):
@@ -141,7 +154,7 @@ def second_pass(ctx: Context, node: Node):
             if ctx.getType(ident):
                 node.shadows = ctx.getShadows(ident)
 
-        case Assignment(ident, indexing, rhs):
+        case Assignment(ident, indexing, fieldAccessing, rhs):
             type = second_pass(ctx, rhs) 
             ctxVarType = ctx.getVarType(ident)
             if ctxVarType == VarType.VAL:
@@ -156,9 +169,28 @@ def second_pass(ctx: Context, node: Node):
                 ctxType = Type(ctxType.type, ctxType.listDepth - 1)
                 if not second_pass(ctx, indexing) == Type(TypeEnum.INT):
                     print(f"Indexing expression must be of type int. On line {node.lineno}")
+                    exit(3)
 
+            if fieldAccessing:
+                structDef = ctx.getStructDef(ident)
+                if not structDef:
+                    print(f"Cannot access field '{fieldAccessing}' of a non struct type '{ident}'. On line {node.lineno}")
+                    exit(3)
+
+                field = structDef.fields.get(fieldAccessing, None)
+
+                if not field:
+                    print(f"Field '{fieldAccessing}' does not exist for struct '{structDef.ident}'")
+                    exit(3)
+
+                if field[0] == VarType.VAL:
+                    print(f"Cannot assign to val field {fieldAcessing}. On line {node.lineno}")
+                    exit(3)
+
+                ctxType = field[1]
+            
             if type != ctxType:
-                print(f"Cannot assign {type} to a variable with type {ctxType}. On line {node.lineno}")
+                print(f"Cannot assign {type} to a {'field' if fieldAccessing else 'Variable'} with type {ctxType}. On line {node.lineno}")
                 exit(3)
 
             if ctx.isGlobalVar(ident):
@@ -197,6 +229,19 @@ def second_pass(ctx: Context, node: Node):
 
             return funcDef.retType
 
+        case StructInit(ident, initFields):
+            structDef = ctx.getStructDef(ident)
+            if len(initFields) != len(structDef.fields):
+                print(f"Wrong number of fields initialized on struct initialization. On line {node.lineno}")
+                exit(3)
+            for initField, fieldName in zip(initFields, structDef.fields):
+                initType = second_pass(ctx, initField)
+                fieldDefType = structDef.fields[fieldName]
+                if  initType!= fieldDefType[1]:
+                    print(f"Got wrong type of field in struct initialization, expected '{fieldDefType[1]}' but got type '{initType}'.On line {node.lineno}")
+                    exit(3)
+            return Type(TypeEnum.STRUCT, structName=ident)
+
         case Binary(op, left, right):
             lType = second_pass(ctx, left)
             rType = second_pass(ctx, right)
@@ -211,6 +256,19 @@ def second_pass(ctx: Context, node: Node):
                     exit(3)
 
                 exprType = Type(lType.type, lType.listDepth - 1)
+
+            elif op == BinaryOp.DOT:
+                if lType.type != TypeEnum.STRUCT:
+                    print(f"Cannot access fields of type that is not a struct, got type '{ltype}'.On line {node.lineno}")
+                    exit(3)
+                
+                structDef = ctx.getStructDef(lType.structName)
+                field = structDef.fields.get(rType, None)
+                if not field:
+                    print(f"Field '{rType}' of struct '{lType.structName}' does not exist. On line {node.lineno}")                
+                    exit(3)
+
+                exprType = field[1]
 
             elif op in [BinaryOp.MULT, BinaryOp.DIV, BinaryOp.REM, BinaryOp.PLUS, BinaryOp.MINUS]:
                 if lType == Type(TypeEnum.FLT) and rType == Type(TypeEnum.FLT):
@@ -274,6 +332,9 @@ def second_pass(ctx: Context, node: Node):
         case Literal(val, type):
             node.exprType = type
             return type
+
+        case Field(ident):
+            return ident
 
 def verify(ctx: Context, node: Node):
     first_pass(ctx, node)

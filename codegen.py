@@ -1,4 +1,4 @@
-from parser import Node, Program, Declaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, Binary, Unary, Ident, Literal
+from parser import Node, Program, FunctionDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, Binary, Unary, Ident, Literal
 from parser import Type, TypeEnum, VarType, BinaryOp, UnaryOp
 from interpreter import eval, Context as ValueContext
 
@@ -54,7 +54,7 @@ def codegen(node, emitter=None):
             [codegen(def_, emitter) for def_ in defs[::-1]]
             return emitter
 
-        case Declaration(ident, args, retType):
+        case FunctionDeclaration(ident, args, retType):
             emitter.addDec(f"declare {retType.llvm()} @{ident}("\
                 + ", ".join(f"{argType.llvm()} %{argIdent}" for (_, argIdent, argType) in args[::-1])\
                 + ")")
