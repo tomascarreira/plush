@@ -259,7 +259,7 @@ def second_pass(ctx: Context, node: Node):
 
             elif op == BinaryOp.DOT:
                 if lType.type != TypeEnum.STRUCT:
-                    print(f"Cannot access fields of type that is not a struct, got type '{ltype}'.On line {node.lineno}")
+                    print(f"Cannot access fields of type that is not a struct, got type '{lType}'. On line {node.lineno}")
                     exit(3)
                 
                 structDef = ctx.getStructDef(lType.structName)
