@@ -61,5 +61,7 @@ necessário adicionar à arvore informação ao field para o getptraddress
 ## Improvements
 
 1. FFI
+  data packing scheme
+  opaque structure types
 
 2. Recursive Structs

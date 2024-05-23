@@ -62,10 +62,9 @@ class Context:
         tmp = {}
         for i, (varType, name, type) in enumerate(structDef.fields[::-1]):
             tmp[name] = (varType, type, i)
-        structDef.fields = tmp
-        self.structDefs[structDef.ident] = structDef
+        self.structDefs[structDef.ident] = tmp
 
-    def getStructDef(self, ident):
+    def getStructFields(self, ident):
         return self.structDefs.get(ident, None)
 
 # Verifies if my interpreter can calculate the value for the llvm ir codegen of global variables
@@ -176,12 +175,12 @@ def second_pass(ctx: Context, node: Node):
                     exit(3)
 
             if fieldAccessing[0]:
-                structDef = ctx.getStructDef(ctxType.structName)
-                if not structDef:
+                structFields = ctx.getStructFields(ctxType.structName)
+                if not structFields:
                     print(f"Cannot access field '{fieldAccessing[0]}' of a non struct type '{ident}'. On line {node.lineno}")
                     exit(3)
 
-                field = structDef.fields.get(fieldAccessing[0], None)
+                field = structFields.get(fieldAccessing[0], None)
 
                 if not field:
                     print(f"Field '{fieldAccessing[0]}' does not exist for struct '{structDef.ident}'")
@@ -192,6 +191,7 @@ def second_pass(ctx: Context, node: Node):
                     exit(3)
 
                 node.fieldAccessing = (fieldAccessing[0], field[1], field[2])
+                node.structName = ctxType.structName
 
                 ctxType = field[1]
             
@@ -236,11 +236,11 @@ def second_pass(ctx: Context, node: Node):
             return funcDef.retType
 
         case StructInit(ident, initFields):
-            structDef = ctx.getStructDef(ident)
-            if len(initFields) != len(structDef.fields):
+            structFields = ctx.getStructFields(ident)
+            if len(initFields) != len(structFields):
                 print(f"Wrong number of fields initialized on struct initialization. On line {node.lineno}")
                 exit(3)
-            for initField, field in zip(initFields, sorted(structDef.fields.values(), key=lambda e: e[2], reverse=True)):
+            for initField, field in zip(initFields, sorted(structFields.values(), key=lambda e: e[2], reverse=True)):
                 initType = second_pass(ctx, initField)
                 fieldDefType = field[1]
                 if  initType!= fieldDefType:
@@ -270,8 +270,8 @@ def second_pass(ctx: Context, node: Node):
                     print(f"Cannot access fields of type that is not a struct, got type '{lType}'. On line {node.lineno}")
                     exit(3)
                 
-                structDef = ctx.getStructDef(lType.structName)
-                field = structDef.fields.get(rType, None)
+                structFields = ctx.getStructFields(lType.structName)
+                field = structFields.get(rType, None)
                 if not field:
                     print(f"Field '{rType}' of struct '{lType.structName}' does not exist. On line {node.lineno}")                
                     exit(3)

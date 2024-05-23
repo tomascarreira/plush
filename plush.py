@@ -29,7 +29,7 @@ if __name__ == "__main__":
             out.write("\n".join(emitter.lines))
             out.write("\n".join(emitter.decls))
 
-        os.system(f"llc {outName} -o {outName.rsplit('.', 1)[0].rsplit('/', 1)[-1]+'.s'}")  
+        os.system(f"llc -O0 {outName} -o {outName.rsplit('.', 1)[0].rsplit('/', 1)[-1]+'.s'}")  
         os.system("make c_functions")  
         os.system(f"gcc -g -c {outName.rsplit('.', 1)[0].rsplit('/', 1)[-1]+'.s'} -o {outName.rsplit('.', 1)[0].rsplit('/', 1)[-1]+'.o'}")
         os.system(f"gcc -g -lm c_functions.o {outName.rsplit('.', 1)[0].rsplit('/', 1)[-1]+'.o'} -o {outName.rsplit('.', 1)[0].rsplit('/', 1)[-1]}")

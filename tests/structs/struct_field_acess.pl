@@ -1,10 +1,11 @@
+function print_int(val n: int);
+
 struct A {
   var a: int,
-  val b: float,
 }
 
 function main() {
-  var sa: struct A := struct A(1,2.0);  
-  var b: int := sa.a;
+  var sa: struct A := struct A(1);  
+  print_int(sa.a);
 }
 

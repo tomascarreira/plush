@@ -71,10 +71,12 @@ class Type:
             return str(self.type)
 
     def llvm(self):
-        if self.listDepth == 0:
-            return self.type.llvm()
-        else:
+        if self.listDepth > 0:
             return "ptr"
+        elif self.structName:
+            return f"%struct.{self.structName}"
+        else:
+            return self.type.llvm()
 
 
 class VarType(Enum):
@@ -192,7 +194,9 @@ class Node:
     lineno: int = None
     
 class Statement(Node):
-    pass
+    # DO THIS TO KNOW THE STRUCT TYPE in the codegen
+    # VERY BAD, IM ASHAMED
+    structName: str = ""
 
 class Expression(Node):
     exprType: Type = None
@@ -278,7 +282,7 @@ class FunctionDeclaration(Declaration):
 @dataclass
 class StructDeclaration(Declaration):
     ident: str
-    fields: dict[str, (VarType, Type)]
+    fields: list[(VarType, str, Type)]
 
 class Definition(Node):
     pass

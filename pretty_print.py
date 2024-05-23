@@ -18,7 +18,7 @@ def pp_ast(node, depth=0):
 
         case StructDeclaration(ident, fields):
             print(f"Struct Declaration {ident}")
-            print("\n".join(f"  Struct Field {varType} {name} {type}" for (name, (varType, type, _)) in fields.items()))
+            print("\n".join(f"  Struct Field {varType} {name} {type}" for name, varType, type in fields))
 
         case GlobalVariableDefinition(varType, ident, type, rhs):
             print(f"GlobalVariable Definition {varType} {ident} {type}")

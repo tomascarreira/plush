@@ -1,4 +1,4 @@
-from parser import Node, Program, FunctionDeclaration, StructDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, StructInit, Binary, Unary, Ident, Literal
+from parser import Node, Program, FunctionDeclaration, StructDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, StructInit, Binary, Unary, Ident, Literal,Field
 from parser import Type, TypeEnum, VarType, BinaryOp, UnaryOp
 from interpreter import eval, Context as ValueContext
 
@@ -46,7 +46,7 @@ class Emitter:
         return res
 
 
-def codegen(node, emitter=None):
+def codegen(node, emitter=None, structPtr=None):
     match node:
         case Program(decs, defs):
             emitter = Emitter()
@@ -60,7 +60,7 @@ def codegen(node, emitter=None):
                 + ")")
 
         case StructDeclaration(ident, fields):
-            emitter.addTop(f"")
+            emitter.addTop(f"%struct.{ident} = type {{{', '.join(type.llvm() for _, _, type in fields)}}}")
 
         case GlobalVariableDefinition(varType, ident, type, rhs):
             emitter.addTop(f"@{ident} = global {type.llvm()} {eval(rhs, ValueContext())}")
@@ -104,7 +104,7 @@ def codegen(node, emitter=None):
         case CodeBlock(statements):
             [codegen(stmt, emitter) for stmt in statements[::-1]]
 
-        case Assignment(ident, indexing, rhs):
+        case Assignment(ident, indexing, fieldAccessing, rhs):
             reg = codegen(rhs, emitter)
             if indexing:
                 idx = codegen(indexing, emitter)
@@ -115,6 +115,10 @@ def codegen(node, emitter=None):
                 emitter << f"  %arrayidx{arrIdx} = getelementptr {rhs.exprType.llvm()}, ptr %{regArr}, i32 {idx}"
                 emitter << f"  store {rhs.exprType.llvm()} {reg}, ptr %arrayidx{arrIdx}"
             # Cannot have global arrays so only need to check when there is no indexing
+            elif fieldAccessing[0]:
+                fieldPtr = emitter.next()
+                emitter  << f"  %{fieldPtr} = getelementptr %struct.{node.structName}, ptr %{ident}.addr, i32 0, i32 {fieldAccessing[2]}"
+                emitter << f"store {fieldAccessing[1].llvm()} {reg}, ptr %{fieldPtr}"
             else:
                 emitter << f"  store {rhs.exprType.llvm()}  {reg}, ptr {'@'+ ident if node.glob else '%'+ident+'.addr'}"
 
@@ -157,9 +161,14 @@ def codegen(node, emitter=None):
 
 
         case VariableDefinition(varType, ident, type, rhs):
-            reg = codegen(rhs, emitter)
-            emitter << f"  %{ident}{node.shadows if node.shadows > 0 else ''}.addr = alloca {type.llvm()}"
-            emitter << f"  store {type.llvm()} {reg}, ptr %{ident}{node.shadows if node.shadows > 0 else ''}.addr"
+            if isinstance(rhs, StructInit):
+                structPtr = f"%{ident}{node.shadows if node.shadows > 0 else ''}.addr"
+                emitter << f"  {structPtr} = alloca {type.llvm()}"
+                reg = codegen(rhs, emitter, structPtr=structPtr)
+            else:
+                reg = codegen(rhs, emitter)
+                emitter << f"  %{ident}{node.shadows if node.shadows > 0 else ''}.addr = alloca {type.llvm()}"
+                emitter << f"  store {type.llvm()} {reg}, ptr %{ident}{node.shadows if node.shadows > 0 else ''}.addr"
 
         case FunctionCall(ident, args):
             llvmArgs = ",".join(f"{arg.exprType.llvm()} {codegen(arg, emitter)}" for arg in args[::-1])
@@ -172,10 +181,21 @@ def codegen(node, emitter=None):
 
             return f"%{ret}"
 
+        case StructInit(ident, initFields):
+            for i, initField in enumerate(initFields[::-1]):
+                fieldPtr = emitter.next()
+                emitter << f"  %{fieldPtr} = getelementptr %struct.{ident}, ptr {structPtr}, i32 0, i32 {i}"
+                initFieldReg = codegen(initField, node)
+                emitter << f"  store {initField.exprType.llvm()} {initFieldReg}, ptr %{fieldPtr}"
+
         case Binary(op, left, right):
 
-            lReg = codegen(left, emitter)
-            rReg = codegen(right, emitter)
+            if op != BinaryOp.DOT:
+                lReg = codegen(left, emitter)
+                rReg = codegen(right, emitter)
+            else:
+                fieldPtr = emitter.next()
+                
 
             res = emitter.next()
 
@@ -210,6 +230,12 @@ def codegen(node, emitter=None):
                     # array pointers are i32 because i dont want to cast them when the indexing comes from an expression
                     emitter << f"  %arrayidx{arrIdx} = getelementptr {node.exprType.llvm()}, ptr {lReg}, i32 {rReg}"                    
                     emitter << f"  %{res} = load {node.exprType.llvm()}, ptr %arrayidx{arrIdx}"
+
+                case BinaryOp.DOT:
+                    emitter << f"  %{fieldPtr} = getelementptr %struct.{left.exprType.structName}, ptr %{left.ident}.addr, i32 0, i32 {right.index}"
+                    emitter << f"  %{res} = load {node.exprType.llvm()}, ptr %{fieldPtr}"
+
+                    
 
             return f"%{res}"
                 
@@ -256,5 +282,8 @@ def codegen(node, emitter=None):
                     exit(5)
 
             return val
+
+        case Field(ident, type, index):
+            pass
         
 
