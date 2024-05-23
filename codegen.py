@@ -1,4 +1,4 @@
-from parser import Node, Program, FunctionDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, Binary, Unary, Ident, Literal
+from parser import Node, Program, FunctionDeclaration, StructDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, StructInit, Binary, Unary, Ident, Literal
 from parser import Type, TypeEnum, VarType, BinaryOp, UnaryOp
 from interpreter import eval, Context as ValueContext
 
@@ -58,6 +58,9 @@ def codegen(node, emitter=None):
             emitter.addDec(f"declare {retType.llvm()} @{ident}("\
                 + ", ".join(f"{argType.llvm()} %{argIdent}" for (_, argIdent, argType) in args[::-1])\
                 + ")")
+
+        case StructDeclaration(ident, fields):
+            emitter.addTop(f"")
 
         case GlobalVariableDefinition(varType, ident, type, rhs):
             emitter.addTop(f"@{ident} = global {type.llvm()} {eval(rhs, ValueContext())}")

@@ -59,6 +59,10 @@ class Context:
         return len(self.funcDefs) == 0
 
     def addStructDef(self, structDef):
+        tmp = {}
+        for i, (varType, name, type) in enumerate(structDef.fields[::-1]):
+            tmp[name] = (varType, type, i)
+        structDef.fields = tmp
         self.structDefs[structDef.ident] = structDef
 
     def getStructDef(self, ident):
@@ -171,21 +175,23 @@ def second_pass(ctx: Context, node: Node):
                     print(f"Indexing expression must be of type int. On line {node.lineno}")
                     exit(3)
 
-            if fieldAccessing:
+            if fieldAccessing[0]:
                 structDef = ctx.getStructDef(ctxType.structName)
                 if not structDef:
-                    print(f"Cannot access field '{fieldAccessing}' of a non struct type '{ident}'. On line {node.lineno}")
+                    print(f"Cannot access field '{fieldAccessing[0]}' of a non struct type '{ident}'. On line {node.lineno}")
                     exit(3)
 
-                field = structDef.fields.get(fieldAccessing, None)
+                field = structDef.fields.get(fieldAccessing[0], None)
 
                 if not field:
-                    print(f"Field '{fieldAccessing}' does not exist for struct '{structDef.ident}'")
+                    print(f"Field '{fieldAccessing[0]}' does not exist for struct '{structDef.ident}'")
                     exit(3)
 
                 if field[0] == VarType.VAL:
-                    print(f"Cannot assign to val field {fieldAcessing}. On line {node.lineno}")
+                    print(f"Cannot assign to val field {fieldAcessing[0]}. On line {node.lineno}")
                     exit(3)
+
+                node.fieldAccessing = (fieldAccessing[0], field[1], field[2])
 
                 ctxType = field[1]
             
@@ -234,11 +240,11 @@ def second_pass(ctx: Context, node: Node):
             if len(initFields) != len(structDef.fields):
                 print(f"Wrong number of fields initialized on struct initialization. On line {node.lineno}")
                 exit(3)
-            for initField, fieldName in zip(initFields, structDef.fields):
+            for initField, field in zip(initFields, sorted(structDef.fields.values(), key=lambda e: e[2], reverse=True)):
                 initType = second_pass(ctx, initField)
-                fieldDefType = structDef.fields[fieldName]
-                if  initType!= fieldDefType[1]:
-                    print(f"Got wrong type of field in struct initialization, expected '{fieldDefType[1]}' but got type '{initType}'.On line {node.lineno}")
+                fieldDefType = field[1]
+                if  initType!= fieldDefType:
+                    print(f"Got wrong type of field in struct initialization, expected '{fieldDefType}' but got type '{initType}'.On line {node.lineno}")
                     exit(3)
 
             node.exprType = Type(TypeEnum.STRUCT, structName=ident)
@@ -270,7 +276,11 @@ def second_pass(ctx: Context, node: Node):
                     print(f"Field '{rType}' of struct '{lType.structName}' does not exist. On line {node.lineno}")                
                     exit(3)
 
+                right.type = field[1]
+                right.index = field[2]
+
                 exprType = field[1]
+
 
             elif op in [BinaryOp.MULT, BinaryOp.DIV, BinaryOp.REM, BinaryOp.PLUS, BinaryOp.MINUS]:
                 if lType == Type(TypeEnum.FLT) and rType == Type(TypeEnum.FLT):
@@ -347,4 +357,3 @@ def verify(ctx: Context, node: Node):
     if not ctx.getFuncDef("main") and not ctx.noFuncDefs:
         print("ERROR: Program is required to have a main function")
         exit(3)
-

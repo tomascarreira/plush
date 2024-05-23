@@ -18,7 +18,7 @@ def pp_ast(node, depth=0):
 
         case StructDeclaration(ident, fields):
             print(f"Struct Declaration {ident}")
-            print("\n".join(f"  Struct Field {varType} {name} {type}" for (name, (varType, type)) in fields.items()))
+            print("\n".join(f"  Struct Field {varType} {name} {type}" for (name, (varType, type, _)) in fields.items()))
 
         case GlobalVariableDefinition(varType, ident, type, rhs):
             print(f"GlobalVariable Definition {varType} {ident} {type}")
@@ -41,8 +41,8 @@ def pp_ast(node, depth=0):
                 print(" ", "Indexing")
                 pp_ast(indexing, depth+2)
 
-            if fieldAccessing:
-                print("  "*(depth+1) + "Field Accessing " + fieldAccessing)
+            if fieldAccessing[0]:
+                print("  "*(depth+1) + "Field Accessing " + fieldAccessing[0])
 
             pp_ast(rhs, depth+1)
 

@@ -53,3 +53,13 @@ verificar escrever para um campo no struct
 criar uma class Field foi necessário -> parte do parser
 
 ## Interpretador
+
+## Codegen
+
+necessário adicionar à arvore informação ao field para o getptraddress
+
+## Improvements
+
+1. FFI
+
+2. Recursive Structs

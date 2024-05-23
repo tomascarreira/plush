@@ -14,7 +14,7 @@ class TypeEnum(Enum):
     VOID = 5
     STRUCT = 6
 
-    def __str__(self, structName=""):
+    def __str__(self):
         match self:
             case TypeEnum.INT:
                 res = "int"
@@ -29,7 +29,7 @@ class TypeEnum(Enum):
             case TypeEnum.VOID:
                 res = "void"
             case TypeEnum.STRUCT:
-                res = "struct " + structName
+                res = "struct"
 
         return res
 
@@ -63,12 +63,12 @@ class Type:
         return False
 
     def __str__(self):
-        if self.listDepth == 0:
-            return str(self.type)
-        elif self.structName != "":
-            return str(self.type, self.structName)
-        else:
+        if self.listDepth > 0:
             return "["*self.listDepth + str(self.type) + "]"*self.listDepth
+        elif self.structName != "":
+            return str(self.type) + " " + self.structName
+        else:
+            return str(self.type)
 
     def llvm(self):
         if self.listDepth == 0:
@@ -200,6 +200,8 @@ class Expression(Node):
 @dataclass
 class Field(Expression):
     ident: str
+    type: TypeEnum = None
+    index: int = 0
 
 @dataclass
 class Unary(Expression):
@@ -252,7 +254,7 @@ class While(Statement):
 class Assignment(Statement):
     ident: str
     indexing: Expression
-    fieldAccessing: str
+    fieldAccessing: (str, TypeEnum, int)
     rhs: Expression
     glob: bool
 
@@ -276,7 +278,7 @@ class FunctionDeclaration(Declaration):
 @dataclass
 class StructDeclaration(Declaration):
     ident: str
-    fields: list[(VarType, str, Type)]
+    fields: dict[str, (VarType, Type)]
 
 class Definition(Node):
     pass
@@ -341,20 +343,20 @@ def p_structDeclaration(p):
 
 def p_structFields1(p):
     "structFields : structField"
-    p[0] = {p[1][0]: p[1][1]}
+    p[0] = [p[1]]
 
 def p_structFields2(p):
     "structFields : structField COMMA"
-    p[0] = {p[1][0]: p[1][1]}
+    p[0] = [p[1]]
 
 def p_structFields3(p):
     "structFields : structField COMMA structFields"
-    p[3][p[1][0]] = p[1][1]
+    p[3].append(p[1])
     p[0] = p[3]
 
 def p_structField(p):
     "structField : varType IDENT COLON type"
-    p[0] = (p[2], (p[1], p[4]))
+    p[0] = (p[1], p[2], p[4])
 
 def p_definition1(p):
     "definition : globalVariableDefinition"
@@ -519,7 +521,7 @@ def p_variableDefiniton(p):
 
 def p_variableAssignment(p):
     "variableAssingment : leftHandSide COLON_EQUALS expression SEMICOLON"
-    ass = Assignment(p[1][0], p[1][1],p[1][2], p[3], False)
+    ass = Assignment(p[1][0], p[1][1], (p[1][2], None, 0), p[3], False)
     ass.lineno = p.lineno(2)
     p[0] = ass
 
