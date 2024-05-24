@@ -46,7 +46,7 @@ class Emitter:
         return res
 
 
-def codegen(node, emitter=None, structPtr=None):
+def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True):
     match node:
         case Program(decs, defs):
             emitter = Emitter()
@@ -185,19 +185,21 @@ def codegen(node, emitter=None, structPtr=None):
             for i, initField in enumerate(initFields[::-1]):
                 fieldPtr = emitter.next()
                 emitter << f"  %{fieldPtr} = getelementptr %struct.{ident}, ptr {structPtr}, i32 0, i32 {i}"
-                initFieldReg = codegen(initField, node)
-                emitter << f"  store {initField.exprType.llvm()} {initFieldReg}, ptr %{fieldPtr}"
+                if isinstance(initField, StructInit):
+                    codegen(initField, emitter, f"%{fieldPtr}")
+                else:
+                    initFieldReg = codegen(initField, emitter)
+                    emitter << f"  store {initField.exprType.llvm()} {initFieldReg}, ptr %{fieldPtr}"
 
         case Binary(op, left, right):
 
             if op != BinaryOp.DOT:
                 lReg = codegen(left, emitter)
                 rReg = codegen(right, emitter)
-            else:
+                res = emitter.next()
+            elif not isinstance(left, Binary):
                 fieldPtr = emitter.next()
                 
-
-            res = emitter.next()
 
             match op:
                 case BinaryOp.MULT:
@@ -232,10 +234,18 @@ def codegen(node, emitter=None, structPtr=None):
                     emitter << f"  %{res} = load {node.exprType.llvm()}, ptr %arrayidx{arrIdx}"
 
                 case BinaryOp.DOT:
-                    emitter << f"  %{fieldPtr} = getelementptr %struct.{left.exprType.structName}, ptr %{left.ident}.addr, i32 0, i32 {right.index}"
-                    emitter << f"  %{res} = load {node.exprType.llvm()}, ptr %{fieldPtr}"
+                    if isinstance(left, Binary):
+                        nestedFieldPtr = codegen(left, emitter, firstFieldAccessing=False)
+                        fieldPtr = emitter.next()
+                        emitter << f"  %{fieldPtr} = getelementptr %struct.{left.exprType.structName}, ptr {nestedFieldPtr}, i32 0, i32 {right.index}"
+                    else:
+                        emitter << f"  %{fieldPtr} = getelementptr %struct.{left.exprType.structName}, ptr %{left.ident}.addr, i32 0, i32 {right.index}"
 
-                    
+                    if firstFieldAccessing:
+                        res = emitter.next()
+                        emitter << f"  %{res} = load {node.exprType.llvm()}, ptr %{fieldPtr}"
+                    else:
+                        res = fieldPtr
 
             return f"%{res}"
                 

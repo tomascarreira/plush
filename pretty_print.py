@@ -74,7 +74,11 @@ def pp_ast(node, depth=0):
         case Binary(op, left, right):
             print(f"Binary {op}", f"{node.exprType}" if node.exprType else "")
             if op == BinaryOp.DOT:
-                print("  "*depth + "  " + left.ident)
+                if isinstance(left, Binary):
+                    pp_ast(left, depth+1)
+                else:
+                    print("  "*depth + "  " + left.ident)
+
                 print("  "*depth + "  " + right.ident)
             else:
                 pp_ast(left, depth+1)

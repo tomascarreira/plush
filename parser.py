@@ -306,6 +306,7 @@ class Program(Node):
 
 precedence = (
     ("nonassoc", "FUNCTION_CALL"),
+    ("left", "PERIOD"),
     ("nonassoc", "LPAREN", "RPAREN"),
     ("nonassoc", "LSQUARE", "RSQUARE"),
     ("right", "NEGATION", "EXCLAMATION"),
