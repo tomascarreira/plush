@@ -1,4 +1,4 @@
-from parser import Node, Expression, Program, FunctionDeclaration, StructDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, StructInit, Binary, Unary, Ident, Literal, Field
+from parser import Node, Expression, Program, FunctionDeclaration, StructDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, StructInit, Binary, Unary, Ident, Literal, Field, Variable, ArrayIndexing, FieldAccessing
 from parser import Type, TypeEnum, VarType, BinaryOp, UnaryOp
 
 class Context:
@@ -109,7 +109,7 @@ def first_pass(ctx: Context, node: Node):
         case _:
             return
 
-def second_pass(ctx: Context, node: Node):
+def second_pass(ctx: Context, node: Node, assignment=False):
     match node:
         case Program(decs, defs):
             [second_pass(ctx, decl) for decl in decs[::-1]]
@@ -157,50 +157,14 @@ def second_pass(ctx: Context, node: Node):
             if ctx.getType(ident):
                 node.shadows = ctx.getShadows(ident)
 
-        case Assignment(ident, indexing, fieldAccessing, rhs):
-            type = second_pass(ctx, rhs) 
-            ctxVarType = ctx.getVarType(ident)
-            if ctxVarType == VarType.VAL:
-                print(f"Cannot assign to val variable {ident}. On line {node.lineno}")
+        case Assignment(lhs, rhs):
+            lhsType = second_pass(ctx, lhs)
+            rhsType = second_pass(ctx, rhs) 
+
+            if lhsType != rhsType:
+                print(f"Cannot assign {rhsType} to type {lhsType}. On line {node.lineno}")
                 exit(3)
 
-            ctxType = ctx.getType(ident)
-            if not ctxType:
-                print(f"Cannot do an assingment to a variable that does not exist. On line {node.lineno}")
-                exit(3)
-            if indexing:
-                ctxType = Type(ctxType.type, ctxType.listDepth - 1)
-                if not second_pass(ctx, indexing) == Type(TypeEnum.INT):
-                    print(f"Indexing expression must be of type int. On line {node.lineno}")
-                    exit(3)
-
-            if fieldAccessing[0]:
-                structFields = ctx.getStructFields(ctxType.structName)
-                if not structFields:
-                    print(f"Cannot access field '{fieldAccessing[0]}' of a non struct type '{ident}'. On line {node.lineno}")
-                    exit(3)
-
-                field = structFields.get(fieldAccessing[0], None)
-
-                if not field:
-                    print(f"Field '{fieldAccessing[0]}' does not exist for struct '{structDef.ident}'")
-                    exit(3)
-
-                if field[0] == VarType.VAL:
-                    print(f"Cannot assign to val field {fieldAcessing[0]}. On line {node.lineno}")
-                    exit(3)
-
-                node.fieldAccessing = (fieldAccessing[0], field[1], field[2])
-                node.structName = ctxType.structName
-
-                ctxType = field[1]
-            
-            if type != ctxType:
-                print(f"Cannot assign {type} to a {'field' if fieldAccessing else 'Variable'} with type {ctxType}. On line {node.lineno}")
-                exit(3)
-
-            if ctx.isGlobalVar(ident):
-                node.glob = True
 
         case While(guard, codeBlock):
             guardType = second_pass(ctx, guard)
@@ -347,6 +311,62 @@ def second_pass(ctx: Context, node: Node):
 
         case Field(ident):
             return ident
+
+        case Variable(ident):
+            if assignment:
+                varType = ctx.getVarType(ident)
+                if varType == VarType.VAL:
+                    print(f"Cannot assign to val variable {ident}. On line {node.lineno}")
+                    exit(3)
+
+                type = ctx.getType(ident)
+                if not type:
+                    print(f"Cannot do an assingment to a variable that does not exist. On line {node.lineno}")
+                    exit(3)
+
+                if ctx.isGlobalVar(ident):
+                    node.glob = True
+
+            node.exprType = type
+            return type
+
+        case ArrayIndexing(array, index):
+            print(array, index)
+            if isinstance(array, ArrayIndexing):
+                if second_pass(ctx, index) != Type(TypeEnum.INT):
+                    print(f"Indexing expression must be of type int. On line {node.lineno}")
+                    exit(3)
+                type = second_pass(ctx, array, assignment)
+            else:
+                type = second_pass(ctx, array, assignment)
+                node.exprType = type
+
+            return Type(type.type, type.listDepth - 1)
+
+        case FieldAccessing(struct, field2):
+            type = second_pass(ctx, struct, assignment)
+            fieldName = second_pass(ctx, field2)
+
+            structFields = ctx.getStructFields(type.structName)
+            if not structFields:
+                print(f"Cannot access field '{fieldName}' of a non struct type '{type}'. On line {node.lineno}")
+                exit(3)
+
+            field = structFields.get(fieldName, None)
+
+            if not field:
+                print(f"Field '{fieldName}' does not exist for '{type}'")
+                exit(3)
+
+            if field[0] == VarType.VAL:
+                print(f"Cannot assign to val field {fieldName}. On line {node.lineno}")
+                exit(3)
+
+            node.fieldAccessing = (fieldName, field[1], field[2])
+            node.structName = type.structName
+
+            node.exprType = field[1]
+            return field[1]            
 
 def verify(ctx: Context, node: Node):
     first_pass(ctx, node)

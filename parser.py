@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
@@ -256,11 +257,26 @@ class While(Statement):
 
 @dataclass
 class Assignment(Statement):
-    ident: str
-    indexing: Expression
-    fieldAccessing: (str, TypeEnum, int)
+    lhs: LHS
     rhs: Expression
     glob: bool
+
+class LHS(Expression):
+    pass
+
+@dataclass
+class Variable(LHS):
+    ident: Ident
+
+@dataclass
+class ArrayIndexing(LHS):
+    array: ArrayIndexing | Expression
+    index: Expression
+
+@dataclass
+class FieldAccessing(LHS):
+    struct: FieldAccessing | Expression
+    field: Field
 
 @dataclass
 class VariableDefinition(Statement):
@@ -526,35 +542,77 @@ def p_variableDefiniton(p):
 
 def p_variableAssignment(p):
     "variableAssingment : leftHandSide COLON_EQUALS expression SEMICOLON"
-    ass = Assignment(p[1][0], p[1][1], (p[1][2], None, 0), p[3], False)
+    ass = Assignment(p[1], p[3], False)
     ass.lineno = p.lineno(2)
     p[0] = ass
 
 def p_leftHandSide1(p):
     "leftHandSide : IDENT"
-    p[0] = (p[1], None, None)
-    
+    p[0] = Variable(Ident(p[1], False, 0))
+
+def buildArrayIndexingIdent(ident, arrayIndexList):
+    curr = ArrayIndexing(Ident(ident, False, 0), arrayIndexList[-1])
+    for arrayIndex in arrayIndexList[:-1][::-1]:
+        curr = ArrayIndexing(curr, arrayIndex)
+    return curr
+
 def p_leftHandSide2(p):
     "leftHandSide : IDENT indexAccess"
-    p[0] = (p[1], p[2], None)
+    p[0] = buildArrayIndexingIdent(p[1], p[2])
+    
+def p_indexAccess(p):
+    "indexAccess : LSQUARE expression RSQUARE index"
+    p[4].append(p[2])
+    p[0] = p[4]
+
+def p_index1(p):
+    "index : LSQUARE expression RSQUARE index"
+    p[4].append(p[2])
+    p[0] = p[4]
+
+def p_index2(p):
+    "index : "
+    p[0] = []
+
+def buildFieldAccessingIdent(ident, sructFieldList):
+    curr = FieldAccessing(Ident(ident, False, 0), Field(sructFieldList[-1]))
+    for field in sructFieldList[:-1][::-1]:
+        curr = FieldAccessing(curr, Field(field))
+    return curr
 
 def p_leftHandSide3(p):
-    "leftHandSide : IDENT PERIOD IDENT"
-    p[0] = (p[1], None, p[3])
+    "leftHandSide : IDENT fieldAccess"
+    p[0] = buildFieldAccessingIdent(p[1], p[2])
 
-def p_indexAccess(p):
-    "indexAccess : LSQUARE expression RSQUARE"
-    p[0] = p[2]
+def p_fieldAccess(p):
+    "fieldAccess : PERIOD IDENT field"
+    p[3].append(p[2])
+    p[0] = p[3]
+
+def p_field1(p):
+    "field : PERIOD IDENT field"
+    p[3].append(p[2])
+    p[0] = p[3]
+
+def p_field2(p):
+    "field : "
+    p[0] = []
 
 def p_expression1(p):
     "expression : LPAREN expression RPAREN"
     p[0] = p[2]
 
+def buildArrayIndexingExpr(expr, arrayIndexList):
+    curr = ArrayIndexing(expr, arrayIndexList[-1])
+    for arrayIndex in arrayIndexList[:-1][::-1]:
+        curr = ArrayIndexing(curr, arrayIndex)
+    return curr
+
 def p_expression2(p):
     "expression : expression indexAccess"
-    bin = Binary(BinaryOp.INDEXING, p[1], p[2])
-    bin.lineno = p[1].lineno
-    p[0] = bin
+    arrIdx = buildArrayIndexingExpr(p[1], p[2])
+    arrIdx.lineno = p[1].lineno
+    p[0] = arrIdx
 
 def p_expression3(p):
     "expression : MINUS expression %prec NEGATION"
@@ -712,15 +770,15 @@ def p_intiFields2(p):
     p[3].append(p[1])
     p[0] = p[3]
 
-def p_expression26(p):
-    "expression : expression PERIOD field"
-    bin = Binary(BinaryOp.DOT, p[1], p[3])
-    bin.lineno = p.lineno(2)
-    p[0] = bin
+def buildFieldAccessingExpr(expr, sructFieldList):
+    curr = FieldAccessing(expr, Field(sructFieldList[-1]))
+    for field in sructFieldList[:-1][::-1]:
+        curr = FieldAccessing(curr, Field(field))
+    return curr
 
-def p_field(p):
-    "field : IDENT"
-    p[0] = Field(p[1])
+def p_expression26(p):
+    "expression : expression fieldAccess"
+    p[0] = buildFieldAccessingExpr(p[1], p[2])
 
 def p_error(p):
     if not p:

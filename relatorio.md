@@ -65,3 +65,9 @@ necessário adicionar à arvore informação ao field para o getptraddress
   opaque structure types
 
 2. Recursive Structs
+
+## Coisas notáveis a referir
+
+Constant folding for globals. importante para coisas como `val tau: float := 3.14 * 2`. Apesar de não permitir `val pi: float := 3.14; val tau: float := pi * 2`.
+
+Shadowing. `var a: int := 2; { var a: int := 3; }` (ver test relevante). Mas não aceita `var a: int := 2; var a: int := 3;` Ou seja shadowing no mesmo escopo. Gostaria que não fosse o caso mas não encontrei uma maneira simples de faze-lo. O problema é com o llvm por ser ssa

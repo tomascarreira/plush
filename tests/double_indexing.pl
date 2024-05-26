@@ -14,7 +14,9 @@ function main() {
   var arr: [[int]] := int_array_array(2);
   arr[0] := arr1;
   arr[1] := arr2;
+  print_int(arr[1][1]);
 
+  arr[1][1] := 42;
   print_int(arr[1][1]);
 }
 

@@ -1,5 +1,6 @@
 import sys
 import os
+from pprint import pprint
 
 from parser import parse, FunctionDeclaration, Type, TypeEnum
 from typeChecker import verify, Context as TypeContext

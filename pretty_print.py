@@ -1,4 +1,4 @@
-from parser import Node, Program, FunctionDeclaration, StructDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, Binary, Unary, StructInit, Ident, Literal
+from parser import Node, Program, FunctionDeclaration, StructDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, Variable, ArrayIndexing, FieldAccessing, While, If, VariableDefinition, FunctionCall, Binary, Unary, StructInit, Ident, Literal, Field
 from parser import Type, BinaryOp, UnaryOp
 
 def pp_ast(node, depth=0):
@@ -33,17 +33,17 @@ def pp_ast(node, depth=0):
             for stat in statements[::-1]:
                 pp_ast(stat, depth+1)
 
-        case Assignment(ident, indexing, fieldAccessing, rhs):
-            print(f"Assignment {ident}")
+        case Assignment(lhs, rhs, glob):
+            print(f"Assignment")
 
-            if indexing:
-                print("  "*depth, end="")
-                print(" ", "Indexing")
-                pp_ast(indexing, depth+2)
-
-            if fieldAccessing[0]:
-                print("  "*(depth+1) + "Field Accessing " + fieldAccessing[0])
-
+            match lhs:
+                case Variable(ident):
+                    pp_ast(lhs, depth+1)
+                case ArrayIndexing(array, index):
+                    pp_ast(lhs, depth+1)
+                case FieldAccessing(struct, field):
+                    pp_ast(lhs, depth+1)
+            
             pp_ast(rhs, depth+1)
 
         case While(guard, codeBlock):
@@ -73,16 +73,8 @@ def pp_ast(node, depth=0):
 
         case Binary(op, left, right):
             print(f"Binary {op}", f"{node.exprType}" if node.exprType else "")
-            if op == BinaryOp.DOT:
-                if isinstance(left, Binary):
-                    pp_ast(left, depth+1)
-                else:
-                    print("  "*depth + "  " + left.ident)
-
-                print("  "*depth + "  " + right.ident)
-            else:
-                pp_ast(left, depth+1)
-                pp_ast(right, depth+1)
+            pp_ast(left, depth+1)
+            pp_ast(right, depth+1)
 
         case Unary(op, expression):
             print(f"Unary {op}", f"{node.exprType}" if node.exprType else "")
@@ -94,4 +86,19 @@ def pp_ast(node, depth=0):
         case Literal(val, type):
             print(f"Literal {val} {type}", f"{node.exprType}" if node.exprType else "")
 
+        case Field(ident, type, index):
+            print(f"Field {ident}")
+
+        case Variable(ident):
+            pp_ast(ident, depth+1)
+
+        case ArrayIndexing(array, index):
+            print(f"Array Indexing", f"{node.exprType}" if node.exprType else "")
+            pp_ast(array, depth+1)
+            pp_ast(index, depth+1)
+
+        case FieldAccessing(struct, field):
+            print(f"Field Accessing ", f"{node.exprType}" if node.exprType else "")
+            pp_ast(struct, depth+1)
+            pp_ast(field, depth+1)
 
