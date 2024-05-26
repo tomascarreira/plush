@@ -335,16 +335,16 @@ def second_pass(ctx: Context, node: Node, assignment=False):
                 if second_pass(ctx, index) != Type(TypeEnum.INT):
                     print(f"Indexing expression must be of type int. On line {node.lineno}")
                     exit(3)
-                type = second_pass(ctx, array, assignment)
+                type = second_pass(ctx, array, assignment=assignment)
                 node.exprType = type
             else:
-                type = second_pass(ctx, array, assignment)
+                type = second_pass(ctx, array, assignment=assignment)
                 node.exprType = type
 
             return Type(type.type, type.listDepth - 1)
 
         case FieldAccessing(struct, field2):
-            type = second_pass(ctx, struct, assignment)
+            type = second_pass(ctx, struct, assignment=assignment)
             fieldName = second_pass(ctx, field2)
 
             structFields = ctx.getStructFields(type.structName)
@@ -362,8 +362,8 @@ def second_pass(ctx: Context, node: Node, assignment=False):
                 print(f"Cannot assign to val field {fieldName}. On line {node.lineno}")
                 exit(3)
 
-            node.fieldAccessing = (fieldName, field[1], field[2])
-            node.structName = type.structName
+            field2.type = field[1]
+            field2.index = field[2]
 
             node.exprType = field[1]
             return field[1]            

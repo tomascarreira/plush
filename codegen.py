@@ -110,7 +110,6 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
 
             emitter << f"  store {rhs.exprType.llvm()}  {rhsReg}, ptr {lhsReg}"
 
-
         case While(guard, codeBlock):
 
             guardLabel = emitter.nextBranch()
@@ -154,6 +153,17 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
                 structPtr = f"%{ident}{node.shadows if node.shadows > 0 else ''}.addr"
                 emitter << f"  {structPtr} = alloca {type.llvm()}"
                 reg = codegen(rhs, emitter, structPtr=structPtr)
+            elif rhs.exprType.type == TypeEnum.STRUCT:
+                reg = codegen(rhs, emitter, assignment=True)
+                emitter << f"  %{ident}{node.shadows if node.shadows > 0 else ''}.addr = alloca {type.llvm()}"
+                # Trick for getting the size of a type
+                sizeReg = emitter.next()
+                emitter << f"  %{sizeReg} = getelementptr {type.llvm()}*, ptr null, i32 1" 
+                sizeRegI = emitter.next()
+                emitter << f"  %{sizeRegI} = ptrtoint {type.llvm()}* %{sizeReg} to i32"
+                emitter << f"  call void @llvm.memcpy.p0.p0.i32(ptr %{ident}{node.shadows if node.shadows > 0 else ''}.addr, ptr {reg}, i32 %{sizeRegI}, i1 false)"
+                emitter.addDec("declare void @llvm.memcpy.p0.p0.i32(ptr, ptr, i32, i1)")
+                
             else:
                 reg = codegen(rhs, emitter)
                 emitter << f"  %{ident}{node.shadows if node.shadows > 0 else ''}.addr = alloca {type.llvm()}"
@@ -181,13 +191,9 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
                     emitter << f"  store {initField.exprType.llvm()} {initFieldReg}, ptr %{fieldPtr}"
 
         case Binary(op, left, right):
-
-            if op != BinaryOp.DOT:
-                lReg = codegen(left, emitter)
-                rReg = codegen(right, emitter)
-                res = emitter.next()
-            elif not isinstance(left, Binary):
-                fieldPtr = emitter.next()
+            lReg = codegen(left, emitter)
+            rReg = codegen(right, emitter)
+            res = emitter.next()
                 
 
             match op:
@@ -215,26 +221,6 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
 
                 case BinaryOp.OR:
                     emitter << f"  %{res} = or {node.exprType.llvm()} {lReg}, {rReg}"
-
-                case BinaryOp.INDEXING:
-                    arrIdx = emitter.nextArrayIdx()
-                    # array pointers are i32 because i dont want to cast them when the indexing comes from an expression
-                    emitter << f"  %arrayidx{arrIdx} = getelementptr {node.exprType.llvm()}, ptr {lReg}, i32 {rReg}"                    
-                    emitter << f"  %{res} = load {node.exprType.llvm()}, ptr %arrayidx{arrIdx}"
-
-                case BinaryOp.DOT:
-                    if isinstance(left, Binary):
-                        nestedFieldPtr = codegen(left, emitter, firstFieldAccessing=False)
-                        fieldPtr = emitter.next()
-                        emitter << f"  %{fieldPtr} = getelementptr %struct.{left.exprType.structName}, ptr {nestedFieldPtr}, i32 0, i32 {right.index}"
-                    else:
-                        emitter << f"  %{fieldPtr} = getelementptr %struct.{left.exprType.structName}, ptr %{left.ident}.addr, i32 0, i32 {right.index}"
-
-                    if firstFieldAccessing:
-                        res = emitter.next()
-                        emitter << f"  %{res} = load {node.exprType.llvm()}, ptr %{fieldPtr}"
-                    else:
-                        res = fieldPtr
 
             return f"%{res}"
                 
@@ -289,7 +275,7 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
             return codegen(ident, emitter)
 
         case ArrayIndexing(array, index):
-                arrReg = codegen(array, emitter, assignment)
+                arrReg = codegen(array, emitter, assignment=assignment)
                 idxReg = codegen(index, emitter)
 
                 arrIdx = emitter.nextArrayIdx()
@@ -303,9 +289,20 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
                     emitter << f"  %{arrNext} = load {node.exprType.llvm()}, ptr %arrayidx{arrIdx}"
                     return f"%{arrNext}"
 
-
-
         case FieldAccessing(struct, field):
-            pass
-        
+            # Não gosto disto, mas não arranjo outro solução :/
+            if isinstance(struct, Ident):
+                structReg = f"%{struct.ident}{struct.shadows if struct.shadows > 0 else ''}.addr"
+            else:
+                structReg = codegen(struct, emitter, firstFieldAccessing=False, assignment=assignment) 
+            fieldPtr = emitter.next()
+
+            emitter << f"  %{fieldPtr} = getelementptr {struct.exprType.llvm()}, ptr {structReg}, i32 0, i32 {field.index}"
+
+            if not firstFieldAccessing or assignment:
+                return f"%{fieldPtr}"
+            else:
+                 structNext = emitter.next()
+                 emitter << f"  %{structNext} = load {node.exprType.llvm()}, ptr %{fieldPtr}"
+                 return f"%{structNext}"
 
