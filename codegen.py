@@ -240,13 +240,19 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
             return f"%{res}"
 
         case Ident(ident):
-            reg = emitter.next()
-            if node.glob:
-                emitter << f"  %{reg} = load {node.exprType.llvm()}, ptr @{ident}"
-            else:
-                emitter << f"  %{reg} = load {node.exprType.llvm()}, ptr %{ident}{node.shadows if node.shadows > 0 else ''}.addr"
+            if assignment:
+                if node.glob:
+                    return f"@{ident}"
+                else:
+                    return f"%{ident}{node.shadows if node.shadows > 0 else ''}.addr"
+            else:                
+                reg = emitter.next()
+                if node.glob:
+                    emitter << f"  %{reg} = load {node.exprType.llvm()}, ptr @{ident}"
+                else:
+                    emitter << f"  %{reg} = load {node.exprType.llvm()}, ptr %{ident}{node.shadows if node.shadows > 0 else ''}.addr"
 
-            return f"%{reg}"
+                return f"%{reg}"
 
         case Literal(val, type):
 
@@ -272,22 +278,30 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
             pass
 
         case Variable(ident):
-            return codegen(ident, emitter)
+            return codegen(ident, emitter, assignment=assignment)
 
         case ArrayIndexing(array, index):
-                arrReg = codegen(array, emitter, assignment=assignment)
-                idxReg = codegen(index, emitter)
+            # Não gosto disto, mas não arranjo outro solução :/
+            if isinstance(array, ArrayIndexing):
+                arrReg = codegen(array, emitter, assignment=assignment, firstFieldAccessing=False)
+            else:
+                arrReg = f"%{array.ident}{array.shadows if array.shadows > 0 else ''}.addr"
+                arrPtr = emitter.next()                    
+                emitter << f"  %{arrPtr} = load ptr, ptr {arrReg}"
+                arrReg = f"%{arrPtr}"
 
-                arrIdx = emitter.nextArrayIdx()
+            idxReg = codegen(index, emitter)
 
-                # array pointers are i32 because i dont want to cast them when the indexing comes from an expression
-                emitter << f"  %arrayidx{arrIdx} = getelementptr {node.exprType.llvm()}, ptr {arrReg}, i32 {idxReg}"
-                if assignment:
-                    return f"%arrayidx{arrIdx}"
-                else:
-                    arrNext = emitter.next()
-                    emitter << f"  %{arrNext} = load {node.exprType.llvm()}, ptr %arrayidx{arrIdx}"
-                    return f"%{arrNext}"
+            arrIdx = emitter.nextArrayIdx()
+            # array pointers are i32 because i dont want to cast them when the indexing comes from an expression
+            emitter << f"  %arrayidx{arrIdx} = getelementptr {node.exprType.llvm()}, ptr {arrReg}, i32 {idxReg}"
+
+            if assignment or not firstFieldAccessing:
+                return f"%arrayidx{arrIdx}"
+            else:
+                arrNext = emitter.next()
+                emitter << f"  %{arrNext} = load {node.exprType.llvm()}, ptr %arrayidx{arrIdx}"
+                return f"%{arrNext}"
 
         case FieldAccessing(struct, field):
             # Não gosto disto, mas não arranjo outro solução :/
@@ -295,8 +309,8 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
                 structReg = f"%{struct.ident}{struct.shadows if struct.shadows > 0 else ''}.addr"
             else:
                 structReg = codegen(struct, emitter, firstFieldAccessing=False, assignment=assignment) 
-            fieldPtr = emitter.next()
 
+            fieldPtr = emitter.next()
             emitter << f"  %{fieldPtr} = getelementptr {struct.exprType.llvm()}, ptr {structReg}, i32 0, i32 {field.index}"
 
             if not firstFieldAccessing or assignment:

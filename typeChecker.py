@@ -165,7 +165,6 @@ def second_pass(ctx: Context, node: Node, assignment=False):
                 print(f"Cannot assign {rhsType} to type {lhsType}. On line {node.lineno}")
                 exit(3)
 
-
         case While(guard, codeBlock):
             guardType = second_pass(ctx, guard)
             if guardType != Type(TypeEnum.BOOL):
@@ -218,35 +217,7 @@ def second_pass(ctx: Context, node: Node, assignment=False):
             lType = second_pass(ctx, left)
             rType = second_pass(ctx, right)
 
-            if op == BinaryOp.INDEXING:
-                if rType != Type(TypeEnum.INT):
-                    print(f"Indexing expression must be an int. On line {node.lineno}")
-                    exit(3)
-
-                if lType.listDepth < 1:
-                    print(f"Can only index a list and not type '{lType}'. On line {node.lineno}")
-                    exit(3)
-
-                exprType = Type(lType.type, lType.listDepth - 1)
-
-            elif op == BinaryOp.DOT:
-                if lType.type != TypeEnum.STRUCT:
-                    print(f"Cannot access fields of type that is not a struct, got type '{lType}'. On line {node.lineno}")
-                    exit(3)
-                
-                structFields = ctx.getStructFields(lType.structName)
-                field = structFields.get(rType, None)
-                if not field:
-                    print(f"Field '{rType}' of struct '{lType.structName}' does not exist. On line {node.lineno}")                
-                    exit(3)
-
-                right.type = field[1]
-                right.index = field[2]
-
-                exprType = field[1]
-
-
-            elif op in [BinaryOp.MULT, BinaryOp.DIV, BinaryOp.REM, BinaryOp.PLUS, BinaryOp.MINUS]:
+            if op in [BinaryOp.MULT, BinaryOp.DIV, BinaryOp.REM, BinaryOp.PLUS, BinaryOp.MINUS]:
                 if lType == Type(TypeEnum.FLT) and rType == Type(TypeEnum.FLT):
                     exprType = Type(TypeEnum.FLT)
                 elif lType == Type(TypeEnum.INT) and rType == Type(TypeEnum.INT):
@@ -298,6 +269,15 @@ def second_pass(ctx: Context, node: Node, assignment=False):
                 print(f"Variable {ident} not defined. On line {node.lineno}")
                 exit(3)
 
+            if assignment:
+                varType = ctx.getVarType(ident)
+                if varType == VarType.VAL:
+                    print(f"Cannot assign to val variable {ident}. On line {node.lineno}")
+                    exit(3)
+
+                if ctx.isGlobalVar(ident):
+                    node.glob = True
+
             node.glob = ctx.isGlobalVar(ident)
             node.shadows = ctx.getShadows(ident)
 
@@ -313,35 +293,24 @@ def second_pass(ctx: Context, node: Node, assignment=False):
             return ident
 
         case Variable(ident):
-            if assignment:
-                varType = ctx.getVarType(ident)
-                if varType == VarType.VAL:
-                    print(f"Cannot assign to val variable {ident}. On line {node.lineno}")
-                    exit(3)
-
-                type = ctx.getType(ident)
-                if not type:
-                    print(f"Cannot do an assingment to a variable that does not exist. On line {node.lineno}")
-                    exit(3)
-
-                if ctx.isGlobalVar(ident):
-                    node.glob = True
+            type = second_pass(ctx, ident, assignment=assignment)
 
             node.exprType = type
             return type
 
         case ArrayIndexing(array, index):
+            if second_pass(ctx, index) != Type(TypeEnum.INT):
+                print(f"Indexing expression must be of type int. On line {node.lineno}")
+                exit(3)
+
             if isinstance(array, ArrayIndexing):
-                if second_pass(ctx, index) != Type(TypeEnum.INT):
-                    print(f"Indexing expression must be of type int. On line {node.lineno}")
-                    exit(3)
                 type = second_pass(ctx, array, assignment=assignment)
-                node.exprType = type
             else:
                 type = second_pass(ctx, array, assignment=assignment)
-                node.exprType = type
 
-            return Type(type.type, type.listDepth - 1)
+            node.exprType = Type(type.type, type.listDepth - 1) if type.listDepth > 1 else Type(type.type, 0)
+
+            return node.exprType
 
         case FieldAccessing(struct, field2):
             type = second_pass(ctx, struct, assignment=assignment)
