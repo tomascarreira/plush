@@ -1,4 +1,4 @@
-from parser import Node, Program, FunctionDeclaration, StructDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, StructInit, Binary, Unary, Ident, Literal,Field
+from parser import Node, Program, FunctionDeclaration, StructDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, StructInit, Binary, Unary, Ident, Literal, Field, Variable, ArrayIndexing, FieldAccessing
 from parser import Type, TypeEnum, VarType, BinaryOp, UnaryOp
 from interpreter import eval, Context as ValueContext
 
@@ -46,7 +46,7 @@ class Emitter:
         return res
 
 
-def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True):
+def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assignment=False):
     match node:
         case Program(decs, defs):
             emitter = Emitter()
@@ -104,23 +104,12 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True):
         case CodeBlock(statements):
             [codegen(stmt, emitter) for stmt in statements[::-1]]
 
-        case Assignment(ident, indexing, fieldAccessing, rhs):
-            reg = codegen(rhs, emitter)
-            if indexing:
-                idx = codegen(indexing, emitter)
-                arrIdx = emitter.nextArrayIdx()
-                regArr = emitter.next()
-                emitter << f"  %{regArr} = load ptr, ptr %{ident}.addr"
-                # array pointers are i32 because i dont want to cast them when the indexing comes from an expression
-                emitter << f"  %arrayidx{arrIdx} = getelementptr {rhs.exprType.llvm()}, ptr %{regArr}, i32 {idx}"
-                emitter << f"  store {rhs.exprType.llvm()} {reg}, ptr %arrayidx{arrIdx}"
-            # Cannot have global arrays so only need to check when there is no indexing
-            elif fieldAccessing[0]:
-                fieldPtr = emitter.next()
-                emitter  << f"  %{fieldPtr} = getelementptr %struct.{node.structName}, ptr %{ident}.addr, i32 0, i32 {fieldAccessing[2]}"
-                emitter << f"store {fieldAccessing[1].llvm()} {reg}, ptr %{fieldPtr}"
-            else:
-                emitter << f"  store {rhs.exprType.llvm()}  {reg}, ptr {'@'+ ident if node.glob else '%'+ident+'.addr'}"
+        case Assignment(lhs, rhs):
+            lhsReg = codegen(lhs, emitter, assignment=True)
+            rhsReg = codegen(rhs, emitter)
+
+            emitter << f"  store {rhs.exprType.llvm()}  {rhsReg}, ptr {lhsReg}"
+
 
         case While(guard, codeBlock):
 
@@ -294,6 +283,29 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True):
             return val
 
         case Field(ident, type, index):
+            pass
+
+        case Variable(ident):
+            return codegen(ident, emitter)
+
+        case ArrayIndexing(array, index):
+                arrReg = codegen(array, emitter, assignment)
+                idxReg = codegen(index, emitter)
+
+                arrIdx = emitter.nextArrayIdx()
+
+                # array pointers are i32 because i dont want to cast them when the indexing comes from an expression
+                emitter << f"  %arrayidx{arrIdx} = getelementptr {node.exprType.llvm()}, ptr {arrReg}, i32 {idxReg}"
+                if assignment:
+                    return f"%arrayidx{arrIdx}"
+                else:
+                    arrNext = emitter.next()
+                    emitter << f"  %{arrNext} = load {node.exprType.llvm()}, ptr %arrayidx{arrIdx}"
+                    return f"%{arrNext}"
+
+
+
+        case FieldAccessing(struct, field):
             pass
         
 

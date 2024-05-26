@@ -331,12 +331,12 @@ def second_pass(ctx: Context, node: Node, assignment=False):
             return type
 
         case ArrayIndexing(array, index):
-            print(array, index)
             if isinstance(array, ArrayIndexing):
                 if second_pass(ctx, index) != Type(TypeEnum.INT):
                     print(f"Indexing expression must be of type int. On line {node.lineno}")
                     exit(3)
                 type = second_pass(ctx, array, assignment)
+                node.exprType = type
             else:
                 type = second_pass(ctx, array, assignment)
                 node.exprType = type
