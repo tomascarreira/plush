@@ -119,8 +119,6 @@ class BinaryOp(Enum):
     NEQ = 10
     AND = 11
     OR = 12
-    INDEXING = 13
-    DOT = 14
 
     def __str__(self):
         match self:
@@ -150,10 +148,6 @@ class BinaryOp(Enum):
                 res = "&&"
             case BinaryOp.OR:
                 res = "||"
-            case BinaryOp.INDEXING:
-                res = "[]"
-            case BinaryOp.DOT:
-                res = "."
 
         return res
 
@@ -195,9 +189,7 @@ class Node:
     lineno: int = None
     
 class Statement(Node):
-    # DO THIS TO KNOW THE STRUCT TYPE in the codegen
-    # VERY BAD, IM ASHAMED
-    structName: str = ""
+    pass
 
 class Expression(Node):
     exprType: Type = None
