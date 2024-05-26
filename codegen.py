@@ -286,9 +286,10 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
                 arrReg = codegen(array, emitter, assignment=assignment, firstFieldAccessing=False)
             else:
                 arrReg = f"%{array.ident}{array.shadows if array.shadows > 0 else ''}.addr"
-                arrPtr = emitter.next()                    
-                emitter << f"  %{arrPtr} = load ptr, ptr {arrReg}"
-                arrReg = f"%{arrPtr}"
+
+            arrPtr = emitter.next()                    
+            emitter << f"  %{arrPtr} = load ptr, ptr {arrReg}"
+            arrReg = f"%{arrPtr}"
 
             idxReg = codegen(index, emitter)
 
