@@ -26,6 +26,8 @@ Tomás Carreira nº50760
 
 **test/**: directory with a lot of small programs that test the correct implemetation of the language
 
+**relatorio-fase5.pdf**: report of phase 5 of the project
+
 ## How to run the program
 
 `./setup.sh` to build and run a docker container with all the necessary dependencies. After this the terminal will be in a new environment.
