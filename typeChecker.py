@@ -101,6 +101,10 @@ def first_pass(ctx: Context, node: Node):
             if ctx.getStructFields(ident):
                 print(f"Struct {ident} cannot be re-declared. On line {node.lineno}")
                 exit(3)
+            for _, _, type in fields:
+                if type.structName == ident:
+                    print(f"Recursive structs are not allow. On line {node.lineno}")
+                    exit(3)
             ctx.addStructDef(node)
 
         case GlobalVariableDefinition(varType, ident, type, rhs):
