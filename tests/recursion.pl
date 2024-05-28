@@ -1,7 +1,7 @@
 function print_int(val n: int);
 
 function main() {
-  print_int(fib(15));
+  print_int(fib(17));
 }
 
 function fib(val n: int): int {

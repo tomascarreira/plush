@@ -5,5 +5,5 @@ error if recursive structs are declared
 allow global struct?
 improve pretty print
 change list type to be like struct type
-global struct should be allowed
-ffi for structs args or return
+
+mudar o relatorio para tira a parte sobre o ffi

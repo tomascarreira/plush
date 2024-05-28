@@ -92,9 +92,15 @@ def first_pass(ctx: Context, node: Node):
             [first_pass(ctx, defi) for defi in defs[::-1]]
 
         case FunctionDeclaration(ident, args, retType):
+            if ctx.getFuncDef(ident):
+                print(f"Function {ident} cannot be re-declared. On line {node.lineno}")
+                exit(3)
             ctx.addFuncDef(node)
 
         case StructDeclaration(ident, fields):
+            if ctx.getStructFields(ident):
+                print(f"Struct {ident} cannot be re-declared. On line {node.lineno}")
+                exit(3)
             ctx.addStructDef(node)
 
         case GlobalVariableDefinition(varType, ident, type, rhs):
