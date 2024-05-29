@@ -73,6 +73,9 @@ def checkCompileTimeConst(expr: Expression) -> bool:
         case FunctionCall(ident, args):
             return False
 
+        case StructInit(ident, initFields):
+                return all([checkCompileTimeConst(initField) for initField in initFields])
+
         case Binary(op, left, right):
             return checkCompileTimeConst(left) and checkCompileTimeConst(right)
 

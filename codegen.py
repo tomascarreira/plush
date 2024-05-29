@@ -8,6 +8,7 @@ class Emitter:
     def __init__(self):
         self.lines = []
         self.decls = []
+        self.types = []
         self.counter = 0
         self.literal = 0
         self.branch = 0
@@ -21,6 +22,9 @@ class Emitter:
 
     def addDec(self, line):
         self.decls.append(line)
+
+    def addType(self, line):
+        self.types.append(line) 
 
     def next(self):
         res = self.counter
@@ -67,7 +71,7 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
                 + ")")
 
         case StructDeclaration(ident, fields):
-            emitter.addTop(f"%struct.{ident} = type {{{', '.join(type.llvm() for _, _, type in fields)}}}")
+            emitter.addType(f"%struct.{ident} = type {{{', '.join(type.llvm() for _, _, type in fields)}}}")
 
         case GlobalVariableDefinition(varType, ident, type, rhs):
             emitter.addTop(f"@{ident} = global {type.llvm()} {eval(rhs, ValueContext())}")
@@ -314,7 +318,7 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
         case FieldAccessing(struct, field):
             # Não gosto disto, mas não arranjo outro solução :/
             if isinstance(struct, Ident):
-                structReg = f"%{struct.ident}{struct.shadows if struct.shadows > 0 else ''}.addr"
+                structReg = f"@{struct.ident}" if struct.glob else f"%{struct.ident}{struct.shadows if struct.shadows > 0 else ''}.addr"
             else:
                 structReg = codegen(struct, emitter, firstFieldAccessing=False, assignment=assignment) 
 

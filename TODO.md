@@ -1,5 +1,3 @@
 # TODO
-defaul values for array and string
-allow global struct?
+default values for array and string
 improve pretty print
-change list type to be like struct type

@@ -27,6 +27,7 @@ if __name__ == "__main__":
 
         outName = sys.argv[1].rsplit(".", 1)[0].rsplit("/", 1)[-1] + ".ll"
         with open(outName, "w") as out:
+            out.write("\n".join(emitter.types))
             out.write("\n".join(emitter.lines))
             out.write("\n".join(emitter.decls))
 

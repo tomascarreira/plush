@@ -1,4 +1,4 @@
-from parser import Node, Program, FunctionDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, Binary, Unary, Ident, Literal
+from parser import Node, Program, FunctionDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, Binary, Unary, Ident, Literal, StructInit
 from parser import Type, TypeEnum, VarType, BinaryOp, UnaryOp
 
 class Context:
@@ -113,6 +113,8 @@ def eval(node, ctx: Context):
 
             return res
 
+        case StructInit(ident, initFields):
+            return f"{{ {', '.join([initField.exprType.llvm() + ' ' + str(eval(initField, ctx)) for initField in initFields])} }}"
 
         case Binary(op, left, right):
             l = eval(left, ctx)
