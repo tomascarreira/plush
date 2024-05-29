@@ -1,3 +1,5 @@
+import struct
+
 from parser import Node, Program, FunctionDeclaration, StructDeclaration, GlobalVariableDefinition, FunctionDefinition, CodeBlock, Assignment, While, If, VariableDefinition, FunctionCall, StructInit, Binary, Unary, Ident, Literal, Field, Variable, ArrayIndexing, FieldAccessing
 from parser import Type, TypeEnum, VarType, BinaryOp, UnaryOp
 from interpreter import eval, Context as ValueContext
@@ -45,6 +47,11 @@ class Emitter:
         self.arrayIdx += 1
         return res
 
+def float_to_hex(f):
+    packed = struct.pack('>d', f)
+    unpacked = struct.unpack('>Q', packed)[0] & 0xffffffffe0000000
+    hex_value = f"0x{unpacked:016X}"
+    return hex_value
 
 def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assignment=False):
     match node:
@@ -260,7 +267,7 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
                 case TypeEnum.INT:
                     pass
                 case TypeEnum.FLT:
-                    pass
+                    val = float_to_hex(val)
                 case TypeEnum.STR:
                     lit = emitter.nextLiteral()
                     emitter.addTop(f"@str.{lit} = constant [{len(val)+1} x i8] c\"{val}\\00\"")
