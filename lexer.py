@@ -82,8 +82,8 @@ def t_FLT_LITERAL(t):
 	return t
 
 def t_INT_LITERAL(t):
-	r"\d+"
-	t.value = int(t.value)
+	r"\d((_*\d*)*\d)?"
+	t.value = int(t.value.replace("_", ""))
 	return t
 
 def t_BOOL_LITERAL(t):
