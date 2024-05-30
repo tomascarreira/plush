@@ -57,14 +57,10 @@ class TypeEnum(Enum):
                 res = "0"
             case TypeEnum.FLT:
                 res = "0.0"
-            case TypeEnum.STR:
-                res = "ptr"
             case TypeEnum.CHA:
                 res = "0"
             case TypeEnum.BOOL:
                 res = "false"
-            case TypeEnum.VOID:
-                res = "void"
 
         return res
 

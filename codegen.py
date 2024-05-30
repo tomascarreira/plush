@@ -91,8 +91,7 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
             emitter << "entry:"
             if retType.type != TypeEnum.VOID:
                 emitter << f"  %{ident}.addr = alloca {retType.llvm()}"
-                # TODO: handle default return type for string and list
-                if retType.listDepth > 0 or retType.type == TypeEnum.STR:
+                if retType.listDepth > 0 or retType.type == TypeEnum.STR or retType.type == TypeEnum.STRUCT:
                     pass
                 else:
                     emitter << f"  store {retType.llvm()} {retType.llvmDefault()}, ptr %{ident}.addr"
@@ -119,7 +118,7 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
             lhsReg = codegen(lhs, emitter, assignment=True)
             rhsReg = codegen(rhs, emitter)
 
-            emitter << f"  store {rhs.exprType.llvm()}  {rhsReg}, ptr {lhsReg}"
+            emitter << f"  store {rhs.exprType.llvm()} {rhsReg}, ptr {lhsReg}"
 
         case While(guard, codeBlock):
 
