@@ -95,7 +95,7 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
                 if retType.listDepth > 0 or retType.type == TypeEnum.STR:
                     pass
                 else:
-                    emitter << f"  store {retType.llvm()} 0, ptr %{ident}.addr"
+                    emitter << f"  store {retType.llvm()} {retType.llvmDefault()}, ptr %{ident}.addr"
             for (_, argIdent, argType) in args:
                 emitter << f"  %{argIdent}.addr = alloca {argType.llvm()}"
                 emitter << f"  store {argType.llvm()} %{argIdent}, ptr %{argIdent}.addr"
@@ -238,8 +238,8 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
 
         case Unary(op, expression):
 
-            res = emitter.next()
             reg = codegen(expression, emitter)
+            res = emitter.next()
 
             match op:
                 case UnaryOp.NEGATION:

@@ -51,6 +51,23 @@ class TypeEnum(Enum):
 
         return res
 
+    def llvmDefault(self):
+        match self:
+            case TypeEnum.INT:
+                res = "0"
+            case TypeEnum.FLT:
+                res = "0.0"
+            case TypeEnum.STR:
+                res = "ptr"
+            case TypeEnum.CHA:
+                res = "0"
+            case TypeEnum.BOOL:
+                res = "false"
+            case TypeEnum.VOID:
+                res = "void"
+
+        return res
+
 @dataclass
 class Type:
     type: TypeEnum
@@ -78,6 +95,9 @@ class Type:
             return f"%struct.{self.structName}"
         else:
             return self.type.llvm()
+
+    def llvmDefault(self):
+        return self.type.llvmDefault()
 
 
 class VarType(Enum):
