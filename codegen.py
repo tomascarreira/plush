@@ -191,6 +191,9 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
             return f"%{ret}"
 
         case StructInit(ident, initFields):
+            if not structPtr:
+                structPtr = f"%{emitter.next()}"
+                emitter << f"  {structPtr} = alloca {node.exprType.llvm()}"
             for i, initField in enumerate(initFields[::-1]):
                 fieldPtr = emitter.next()
                 emitter << f"  %{fieldPtr} = getelementptr %struct.{ident}, ptr {structPtr}, i32 0, i32 {i}"
@@ -199,6 +202,11 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
                 else:
                     initFieldReg = codegen(initField, emitter)
                     emitter << f"  store {initField.exprType.llvm()} {initFieldReg}, ptr %{fieldPtr}"
+
+            if not structPtr:
+                ret = emitter.next()
+                emitter << f"  %{ret} = load {node.exprType.llvm()}, ptr {structPtr}"
+                return f"%{ret}"
 
         case Binary(op, left, right):
             lReg = codegen(left, emitter)
