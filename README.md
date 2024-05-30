@@ -24,6 +24,8 @@ Tomás Carreira nº50760
 
 **setup.sh**, **Dockerfile**: docker file and bash script for getting an enviroment with the dependencies required to use the compiler
 
+**programs**: directory with some programs written in plush
+
 **test/**: directory with a lot of small programs that test the correct implemetation of the language
 
 **relatorio-fase5.pdf**: report of phase 5 of the project

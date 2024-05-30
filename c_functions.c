@@ -103,5 +103,5 @@ int** int_array_array(int size) {
 }
 
 int pow_int(int b, int e) {
-  return pow(b, e);
+  return (int) pow(b, e);
 }
