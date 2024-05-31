@@ -558,6 +558,7 @@ def p_leftHandSide1(p):
     "leftHandSide : IDENT"
     var = Variable(Ident(p[1], False, 0))
     var.lineno = p.lineno(1)
+    var.ident.lineno = p.lineno(1)
     p[0] = var
 
 def buildArrayIndexingIdent(ident, arrayIndexList):
