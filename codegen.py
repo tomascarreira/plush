@@ -191,7 +191,10 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
             return f"%{ret}"
 
         case StructInit(ident, initFields):
+            # gross last minute fix for struct init in function call argument
+            noStructPtr = False
             if not structPtr:
+                noStructPtr = True
                 structPtr = f"%{emitter.next()}"
                 emitter << f"  {structPtr} = alloca {node.exprType.llvm()}"
             for i, initField in enumerate(initFields[::-1]):
@@ -203,7 +206,7 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
                     initFieldReg = codegen(initField, emitter)
                     emitter << f"  store {initField.exprType.llvm()} {initFieldReg}, ptr %{fieldPtr}"
 
-            if not structPtr:
+            if noStructPtr:
                 ret = emitter.next()
                 emitter << f"  %{ret} = load {node.exprType.llvm()}, ptr {structPtr}"
                 return f"%{ret}"
