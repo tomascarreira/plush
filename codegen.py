@@ -71,7 +71,7 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
                 + ")")
 
         case StructDeclaration(ident, fields):
-            emitter.addType(f"%struct.{ident} = type {{{', '.join(type.llvm() for _, _, type in fields)}}}")
+            emitter.addType(f"%struct.{ident} = type {{{', '.join(type.llvm() for _, _, type in fields[::-1])}}}")
 
         case GlobalVariableDefinition(varType, ident, type, rhs):
             emitter.addTop(f"@{ident} = global {type.llvm()} {eval(rhs, ValueContext())}")

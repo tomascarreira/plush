@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
+#include <string.h>
 
 void print_int(int n) {
   printf("%d\n", n);
@@ -100,6 +101,10 @@ bool* bool_array(int size) {
 
 int** int_array_array(int size) {
   return malloc(size * sizeof(int*));
+}
+
+void copy_int_array(int* dest, int* src, int size) {
+  memcpy(dest, src, size*sizeof(int));
 }
 
 int pow_int(int b, int e) {

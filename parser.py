@@ -556,7 +556,9 @@ def p_variableAssignment(p):
 
 def p_leftHandSide1(p):
     "leftHandSide : IDENT"
-    p[0] = Variable(Ident(p[1], False, 0))
+    var = Variable(Ident(p[1], False, 0))
+    var.lineno = p.lineno(1)
+    p[0] = var
 
 def buildArrayIndexingIdent(ident, arrayIndexList):
     curr = ArrayIndexing(Ident(ident, False, 0), arrayIndexList[-1])

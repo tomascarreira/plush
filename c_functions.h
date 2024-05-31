@@ -18,6 +18,8 @@ char** str_array(int size);
 char* char_array(int size);
 bool* bool_array(int size);
 
+void copy_int_array(int* dest, int* src, int size);
+
 int** int_array_array(int size);
 
 int pow_int(int b, int e);
