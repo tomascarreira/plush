@@ -163,17 +163,6 @@ def codegen(node, emitter=None, structPtr=None, firstFieldAccessing=True, assign
                 structPtr = f"%{ident}{node.shadows if node.shadows > 0 else ''}.addr"
                 emitter << f"  {structPtr} = alloca {type.llvm()}"
                 reg = codegen(rhs, emitter, structPtr=structPtr)
-            elif rhs.exprType.type == TypeEnum.STRUCT:
-                reg = codegen(rhs, emitter, assignment=True)
-                emitter << f"  %{ident}{node.shadows if node.shadows > 0 else ''}.addr = alloca {type.llvm()}"
-                # Trick for getting the size of a type
-                sizeReg = emitter.next()
-                emitter << f"  %{sizeReg} = getelementptr {type.llvm()}*, ptr null, i32 1" 
-                sizeRegI = emitter.next()
-                emitter << f"  %{sizeRegI} = ptrtoint {type.llvm()}* %{sizeReg} to i32"
-                emitter << f"  call void @llvm.memcpy.p0.p0.i32(ptr %{ident}{node.shadows if node.shadows > 0 else ''}.addr, ptr {reg}, i32 %{sizeRegI}, i1 false)"
-                emitter.addDec("declare void @llvm.memcpy.p0.p0.i32(ptr, ptr, i32, i1)")
-                
             else:
                 reg = codegen(rhs, emitter)
                 emitter << f"  %{ident}{node.shadows if node.shadows > 0 else ''}.addr = alloca {type.llvm()}"
